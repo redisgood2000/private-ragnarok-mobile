@@ -26,6 +26,7 @@ namespace PrivateRagnarok.Client
         private string apiBaseUrl;
         private Transform localPlayer;
         private ThirdPersonPrototypeController localMovement;
+        private MobileMovementInput mobileInput;
         private Vector3 localTarget;
         private float localTargetYaw;
         private bool hasLocalSnapshot;
@@ -36,10 +37,11 @@ namespace PrivateRagnarok.Client
         public bool IsConnected => connection?.State == HubConnectionState.Connected;
         public event Action<string> ConnectionStatusChanged;
 
-        public void Initialize(Transform player, ThirdPersonPrototypeController movement)
+        public void Initialize(Transform player, ThirdPersonPrototypeController movement, MobileMovementInput touchInput = null)
         {
             localPlayer = player;
             localMovement = movement;
+            mobileInput = touchInput;
             if (localMovement != null) localMovement.NetworkControlled = true;
         }
 
@@ -143,8 +145,10 @@ namespace PrivateRagnarok.Client
             if (IsConnected && Time.unscaledTime >= nextInputAt)
             {
                 nextInputAt = Time.unscaledTime + inputSendInterval;
-                var x = Input.GetAxisRaw("Horizontal");
-                var z = Input.GetAxisRaw("Vertical");
+                var x = mobileInput != null && Input.touchCount > 0
+                    ? mobileInput.Direction.x : Input.GetAxisRaw("Horizontal");
+                var z = mobileInput != null && Input.touchCount > 0
+                    ? mobileInput.Direction.y : Input.GetAxisRaw("Vertical");
                 _ = SendInputAsync(x, z, ++inputSequence);
             }
         }
