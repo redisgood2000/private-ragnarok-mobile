@@ -19,7 +19,7 @@ namespace PrivateRagnarok.Client
         [SerializeField] private Button registerButton;
         [Header("Feedback")]
         [SerializeField] private TMP_Text statusText;
-        [SerializeField] private GameObject authenticatedPanel;
+        [SerializeField] private GameObject loginPanel;
 
         private void Awake()
         {
@@ -28,7 +28,7 @@ namespace PrivateRagnarok.Client
             loginButton.onClick.AddListener(Login);
             registerButton.onClick.AddListener(Register);
             SetBusy(false);
-            if (authenticatedPanel != null) authenticatedPanel.SetActive(false);
+            
         }
 
         private void Login()
@@ -82,7 +82,7 @@ namespace PrivateRagnarok.Client
         {
             SetBusy(false);
             Show("Welcome, " + response.username + "!");
-            if (authenticatedPanel != null) authenticatedPanel.SetActive(true);
+            if (loginPanel != null) loginPanel.SetActive(false);
             if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
             if (worldNetworkClient != null && authClient != null)
             {
