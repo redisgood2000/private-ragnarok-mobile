@@ -148,6 +148,8 @@ namespace PrivateRagnarok.Client
             controller.radius = 0.38f;
             controller.center = new Vector3(0f, 0.9f, 0f);
             var movement = player.AddComponent<ThirdPersonPrototypeController>();
+            var network = player.AddComponent<WorldNetworkClient>();
+            network.Initialize(player.transform, movement);
 
             var cameraObject = new GameObject("World camera");
             cameraObject.transform.SetParent(transform, false);
