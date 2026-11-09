@@ -3,179 +3,92 @@ using UnityEngine.UI;
 
 namespace PrivateRagnarok.Client
 {
+    /// <summary>
+    /// Minimal offline-first launcher. The prototype world is built before the
+    /// menu is dismissed, so PLAY DEMO has one deterministic job.
+    /// </summary>
     public sealed class LoginScreenController : MonoBehaviour
     {
-        [Header("Dependencies")]
-        [SerializeField] private ApiAuthClient authClient;
-        [SerializeField] private WorldNetworkClient worldNetworkClient;
-        [Header("Inputs")]
-        [SerializeField] private InputField serverUrlInput;
-        [SerializeField] private InputField usernameInput;
-        [SerializeField] private InputField passwordInput;
-        [SerializeField] private InputField inviteCodeInput;
-        [Header("Actions")]
-        [SerializeField] private Button loginButton;
-        [SerializeField] private Button registerButton;
         [SerializeField] private Button demoButton;
-        [Header("Feedback")]
         [SerializeField] private Text statusText;
         [SerializeField] private GameObject loginPanel;
 
         private bool demoEntered;
-        private bool busy;
         private int lastManualTouchFrame = -1;
 
         private void Awake()
         {
-            if (authClient == null) authClient = GetComponent<ApiAuthClient>();
-            if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
-            if (loginButton != null) loginButton.onClick.AddListener(Login);
-            if (registerButton != null) registerButton.onClick.AddListener(Register);
-            if (demoButton != null) demoButton.onClick.AddListener(EnterDemo);
-            SetBusy(false);
+            if (demoButton != null)
+                demoButton.onClick.AddListener(EnterDemo);
+            if (statusText != null)
+                statusText.text = "Tap PLAY DEMO to enter the world";
         }
 
-        // Fallback for Android devices where Unity's StandaloneInputModule does not
-        // deliver UI pointer events. Hit-test the actual button RectTransforms using
-        // the raw touch coordinates, then invoke the same button action.
         private void Update()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            if (loginPanel == null || !loginPanel.activeInHierarchy || Input.touchCount == 0)
+            // Fallback to raw legacy touch input if Unity's UI EventSystem
+            // does not dispatch pointer clicks on a particular Android device.
+            if (demoEntered || loginPanel == null || !loginPanel.activeInHierarchy ||
+                demoButton == null || Input.touchCount == 0 ||
+                lastManualTouchFrame == Time.frameCount)
                 return;
 
-            foreach (var touch in Input.touches)
+            for (var i = 0; i < Input.touchCount; i++)
             {
-                if (touch.phase != TouchPhase.Began || lastManualTouchFrame == Time.frameCount)
+                var touch = Input.GetTouch(i);
+                if (touch.phase != TouchPhase.Began)
                     continue;
 
-                if (TryManualButtonHit(demoButton, touch.position) ||
-                    TryManualButtonHit(loginButton, touch.position) ||
-                    TryManualButtonHit(registerButton, touch.position))
+                var rect = demoButton.transform as RectTransform;
+                if (rect != null && demoButton.isActiveAndEnabled && demoButton.interactable &&
+                    RectTransformUtility.RectangleContainsScreenPoint(rect, touch.position, null))
                 {
                     lastManualTouchFrame = Time.frameCount;
-                    break;
+                    Debug.Log("PLAY DEMO raw touch accepted at " + touch.position);
+                    demoButton.onClick.Invoke();
+                    return;
                 }
             }
 #endif
         }
 
-        private static bool TryManualButtonHit(Button button, Vector2 screenPosition)
-        {
-            if (button == null || !button.isActiveAndEnabled || !button.interactable)
-                return false;
-
-            var rect = button.transform as RectTransform;
-            if (rect == null || !RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    rect, screenPosition, null, out var localPoint) || !rect.rect.Contains(localPoint))
-                return false;
-
-            button.onClick.Invoke();
-            return true;
-        }
-
-        // Offline prototype mode: no backend or server URL is required.
         private void EnterDemo()
         {
-            if (demoEntered) return;
-            demoEntered = true;
-            if (loginPanel != null) loginPanel.SetActive(false);
-            if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
-            if (worldNetworkClient != null) worldNetworkClient.enabled = false;
-            Debug.Log("Entered Private Ragnarok offline demo.");
-        }
+            if (demoEntered)
+                return;
 
-        private void Login()
-        {
-            if (busy || !ApplyServerUrl() || !ValidateInputs(false)) return;
-            SetBusy(true);
-            StartCoroutine(authClient.Login(usernameInput.text.Trim(), passwordInput.text,
-                OnAuthenticated, OnFailed));
-        }
-
-        private void Register()
-        {
-            if (busy || !ApplyServerUrl() || !ValidateInputs(true)) return;
-            SetBusy(true);
-            StartCoroutine(authClient.Register(usernameInput.text.Trim(), passwordInput.text,
-                inviteCodeInput.text.Trim(), OnAuthenticated, OnFailed));
-        }
-
-        private bool ApplyServerUrl()
-        {
-            if (serverUrlInput == null || authClient == null || !authClient.SetApiBaseUrl(serverUrlInput.text.Trim()))
+            try
             {
-                Show("Enter your game server HTTPS address first.");
-                return false;
-            }
-            return true;
-        }
+                // Ensure the local town exists even if Unity Start ordering changes.
+                var world = FindObjectOfType<WorldBootstrap>();
+                if (world == null)
+                    throw new System.Exception("WorldBootstrap is missing from the startup scene.");
 
-        private bool ValidateInputs(bool needsInvite)
-        {
-            if (usernameInput == null || passwordInput == null ||
-                string.IsNullOrWhiteSpace(usernameInput.text) ||
-                string.IsNullOrWhiteSpace(passwordInput.text))
+                world.BuildWorld();
+
+                // Offline demo must not attempt a connection to the unconfigured API.
+                var network = FindObjectOfType<WorldNetworkClient>();
+                if (network != null)
+                    network.enabled = false;
+
+                demoEntered = true;
+                Debug.Log("PLAY DEMO succeeded. Local prototype world is ready.");
+                if (loginPanel != null)
+                    loginPanel.SetActive(false);
+            }
+            catch (System.Exception exception)
             {
-                Show("Enter your username and password.");
-                return false;
+                Debug.LogException(exception);
+                if (statusText != null)
+                    statusText.text = "Could not start demo: " + exception.Message;
             }
-            if (needsInvite && (inviteCodeInput == null || string.IsNullOrWhiteSpace(inviteCodeInput.text)))
-            {
-                Show("An invitation code is required.");
-                return false;
-            }
-            if (passwordInput.text.Length < 12)
-            {
-                Show("Password must be at least 12 characters.");
-                return false;
-            }
-            return true;
-        }
-
-        private void OnAuthenticated(AuthResponse response)
-        {
-            SetBusy(false);
-            Show("Welcome, " + response.username + "!");
-            if (loginPanel != null) loginPanel.SetActive(false);
-            if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
-            if (worldNetworkClient != null && authClient != null)
-            {
-                worldNetworkClient.ConnectionStatusChanged -= OnWorldStatusChanged;
-                worldNetworkClient.ConnectionStatusChanged += OnWorldStatusChanged;
-                worldNetworkClient.ConfigureAndConnect(authClient.AccessToken, response.playerId,
-                    response.username, authClient.ApiBaseUrl);
-            }
-        }
-
-        private void OnWorldStatusChanged(string message) => Show(message);
-
-        private void OnFailed(string message)
-        {
-            SetBusy(false);
-            Show(message);
-        }
-
-        private void SetBusy(bool value)
-        {
-            busy = value;
-            if (loginButton != null) loginButton.interactable = !value;
-            if (registerButton != null) registerButton.interactable = !value;
-            if (demoButton != null) demoButton.interactable = !value;
-            if (value) Show("Connecting to the game server...");
-        }
-
-        private void Show(string message)
-        {
-            if (statusText != null) statusText.text = message;
         }
 
         private void OnDestroy()
         {
-            if (loginButton != null) loginButton.onClick.RemoveListener(Login);
-            if (registerButton != null) registerButton.onClick.RemoveListener(Register);
-            if (demoButton != null) demoButton.onClick.RemoveListener(EnterDemo);
-            if (worldNetworkClient != null) worldNetworkClient.ConnectionStatusChanged -= OnWorldStatusChanged;
+            if (demoButton != null)
+                demoButton.onClick.RemoveListener(EnterDemo);
         }
     }
 }
