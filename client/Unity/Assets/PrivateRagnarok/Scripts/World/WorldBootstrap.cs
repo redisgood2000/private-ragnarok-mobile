@@ -30,7 +30,6 @@ namespace PrivateRagnarok.Client
             BuildDecorations();
             BuildLighting();
             BuildPlayer();
-            BuildCamera();
             BuildHudAnchor();
         }
 
