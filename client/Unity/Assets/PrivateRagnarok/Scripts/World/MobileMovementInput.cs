@@ -9,6 +9,7 @@ namespace PrivateRagnarok.Client
         [SerializeField] private Vector2 centerFromBottomLeft = new Vector2(112f, 126f);
         private int activeFingerId = -1;
         private Vector2 direction;
+        private Vector2 activeCenter;
         private Texture2D whiteTexture;
 
         public Vector2 Direction => direction;
@@ -35,8 +36,7 @@ namespace PrivateRagnarok.Client
                     }
                     else
                     {
-                        var center = new Vector2(centerFromBottomLeft.x, centerFromBottomLeft.y);
-                        var delta = (touch.position - center) / radiusPixels;
+                        var delta = (touch.position - activeCenter) / radiusPixels;
                         direction = Vector2.ClampMagnitude(delta, 1f);
                     }
                     break;
@@ -49,8 +49,8 @@ namespace PrivateRagnarok.Client
                 if (touch.phase != TouchPhase.Began || touch.position.x > Screen.width * 0.5f)
                     continue;
                 activeFingerId = touch.fingerId;
-                var center = new Vector2(centerFromBottomLeft.x, centerFromBottomLeft.y);
-                direction = Vector2.ClampMagnitude((touch.position - center) / radiusPixels, 1f);
+                activeCenter = touch.position;
+                direction = Vector2.zero;
                 break;
             }
         }
@@ -72,7 +72,9 @@ namespace PrivateRagnarok.Client
                 whiteTexture.Apply();
             }
 
-            var center = new Vector2(centerFromBottomLeft.x, Screen.height - centerFromBottomLeft.y);
+            var center = activeFingerId >= 0
+                ? new Vector2(activeCenter.x, Screen.height - activeCenter.y)
+                : new Vector2(centerFromBottomLeft.x, Screen.height - centerFromBottomLeft.y);
             var outer = new Rect(center.x - radiusPixels, center.y - radiusPixels,
                 radiusPixels * 2f, radiusPixels * 2f);
             var knobCenter = center + new Vector2(direction.x, -direction.y) * radiusPixels * 0.58f;
