@@ -38,7 +38,7 @@ namespace PrivateRagnarok.Editor
             scaler.referenceResolution = new Vector2(1920, 1080);
 
             var panel = Rect("LoginPanel", canvasObject.transform, new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f), new Vector2(620, 690));
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(620, 690));
             var panelImage = panel.gameObject.AddComponent<Image>();
             panelImage.color = new Color(0.035f, 0.055f, 0.085f, 0.94f);
 
