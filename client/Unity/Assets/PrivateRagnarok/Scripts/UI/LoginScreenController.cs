@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,6 +15,7 @@ namespace PrivateRagnarok.Client
         [SerializeField] private GameObject loginPanel;
 
         private bool demoEntered;
+        private bool demoStarting;
         private int lastManualTouchFrame = -1;
 
         private void Awake()
@@ -55,34 +57,50 @@ namespace PrivateRagnarok.Client
 
         private void EnterDemo()
         {
-            if (demoEntered)
-                return;
+            if (demoEntered || demoStarting) return;
+            StartCoroutine(EnterDemoRoutine());
+        }
+
+        private IEnumerator EnterDemoRoutine()
+        {
+            demoStarting = true;
+            if (demoButton != null) demoButton.interactable = false;
+            if (statusText != null) statusText.text = "Checking for world content updates...";
+
+            GameObject remoteWorldPrefab = null;
+            var patcher = FindObjectOfType<RemoteContentPatcher>();
+            if (patcher != null)
+                yield return patcher.PrepareWorldContent(
+                    prefab => remoteWorldPrefab = prefab,
+                    message => { if (statusText != null) statusText.text = message; });
 
             try
             {
-                // Ensure the local town exists even if Unity Start ordering changes.
+                // Build only after the optional remote patch has been checked.
                 var world = FindObjectOfType<WorldBootstrap>();
                 if (world == null)
                     throw new System.Exception("WorldBootstrap is missing from the startup scene.");
 
-                world.BuildWorld();
+                world.BuildWorld(remoteWorldPrefab);
 
                 // Offline demo must not attempt a connection to the unconfigured API.
                 var network = FindObjectOfType<WorldNetworkClient>();
-                if (network != null)
-                    network.enabled = false;
+                if (network != null) network.enabled = false;
 
                 demoEntered = true;
-                Debug.Log("PLAY DEMO succeeded. Local prototype world is ready.");
-                if (loginPanel != null)
-                    loginPanel.SetActive(false);
+                Debug.Log(remoteWorldPrefab != null
+                    ? "PLAY DEMO succeeded. Remote world content is active."
+                    : "PLAY DEMO succeeded. Built-in local prototype world is ready.");
+                if (loginPanel != null) loginPanel.SetActive(false);
             }
             catch (System.Exception exception)
             {
                 Debug.LogException(exception);
                 if (statusText != null)
                     statusText.text = "Could not start demo: " + exception.Message;
+                if (demoButton != null) demoButton.interactable = true;
             }
+            demoStarting = false;
         }
 
         private void OnDestroy()
