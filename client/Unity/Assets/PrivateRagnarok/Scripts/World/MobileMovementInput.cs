@@ -59,8 +59,16 @@ namespace PrivateRagnarok.Client
         {
             if (whiteTexture == null)
             {
-                whiteTexture = new Texture2D(1, 1, TextureFormat.RGBA32, false);
-                whiteTexture.SetPixel(0, 0, Color.white);
+                const int size = 64;
+                whiteTexture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                for (var y = 0; y < size; y++)
+                for (var x = 0; x < size; x++)
+                {
+                    var dx = (x + 0.5f) / size * 2f - 1f;
+                    var dy = (y + 0.5f) / size * 2f - 1f;
+                    var alpha = Mathf.Clamp01((1f - Mathf.Sqrt(dx * dx + dy * dy)) * 16f);
+                    whiteTexture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
                 whiteTexture.Apply();
             }
 
