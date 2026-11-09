@@ -2,6 +2,12 @@ name: Unity Android APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/unity-android.yml"
+      - "client/Unity/Assets/Editor/RagnarokAndroidBuildEntryPoint.cs"
+      - "client/Unity/Assets/packages.config"
 
 permissions:
   contents: read
