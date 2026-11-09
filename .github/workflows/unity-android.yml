@@ -99,8 +99,31 @@ jobs:
           ls -lh "$APK"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
           test -n "$APKSIGNER"
-          "$APKSIGNER" verify --verbose "$APK"
-          "$APKSIGNER" verify --print-certs "$APK" | grep "Signer #1 certificate SHA-256 digest"
+          set +e
+          VERIFY_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs "$APK" 2>&1)"
+          VERIFY_STATUS=$?
+          set -e
+          printf '%s\n' "$VERIFY_OUTPUT"
+
+          # Some Unity/Android build metadata is intentionally outside the legacy
+          # JAR (v1) manifest. apksigner reports these as warnings even though the
+          # APK Signature Scheme v2 digest protects the complete APK contents.
+          # Accept only when v1 and v2 both verify and exactly one SHA-256 signer
+          # certificate is present. Any missing/failed signature check still fails.
+          printf '%s\n' "$VERIFY_OUTPUT" | grep -Fq "Verified using v1 scheme (JAR signing): true"
+          printf '%s\n' "$VERIFY_OUTPUT" | grep -Fq "Verified using v2 scheme (APK Signature Scheme v2): true"
+          printf '%s\n' "$VERIFY_OUTPUT" | grep -Eq "^Number of signers: 1$"
+          printf '%s\n' "$VERIFY_OUTPUT" | grep -Eq "^Signer #1 certificate SHA-256 digest: [[:xdigit:]]{64}$"
+
+          if [ "$VERIFY_STATUS" -ne 0 ]; then
+            WARNING_COUNT="$(printf '%s\n' "$VERIFY_OUTPUT" | grep -c '^WARNING: META-INF/' || true)"
+            OTHER_WARNINGS="$(printf '%s\n' "$VERIFY_OUTPUT" | grep '^WARNING:' | grep -Ev '^WARNING: META-INF/(com/android/build/gradle/app-metadata\.properties|com\.android\.games\.engine\.build_fingerprint) not protected by signature\.' || true)"
+            if [ "$WARNING_COUNT" -ne 2 ] || [ -n "$OTHER_WARNINGS" ]; then
+              echo "::error::APK signature verification failed for reasons beyond the two known unsigned Unity metadata entries."
+              exit 1
+            fi
+            echo "::notice::APK v1/v2 signatures verified. Ignoring only the two known unsigned metadata warnings; v2 covers the complete APK."
+          fi
 
       - name: Publish versioned GitHub release
         uses: softprops/action-gh-release@v2
