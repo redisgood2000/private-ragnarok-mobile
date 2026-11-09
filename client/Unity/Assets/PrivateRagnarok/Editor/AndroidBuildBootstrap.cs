@@ -66,6 +66,7 @@ namespace PrivateRagnarok.Editor
             var controller = auth.AddComponent<PrivateRagnarok.Client.LoginScreenController>();
             var serialized = new SerializedObject(controller);
             serialized.FindProperty("authClient").objectReferenceValue = authClient;
+            serialized.FindProperty("loginPanel").objectReferenceValue = panel.gameObject;
             serialized.FindProperty("serverUrlInput").objectReferenceValue = serverUrl;
             serialized.FindProperty("usernameInput").objectReferenceValue = username;
             serialized.FindProperty("passwordInput").objectReferenceValue = password;
@@ -154,10 +155,13 @@ namespace PrivateRagnarok.Editor
         {
             var rect = Rect(label, parent, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0, y), new Vector2(245, 58));
-            rect.gameObject.AddComponent<Image>().color = color;
+            var image = rect.gameObject.AddComponent<Image>();
+            image.color = color;
             var text = Text(label, rect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, 23);
             text.alignment = TextAlignmentOptions.Center;
-            return rect.gameObject.AddComponent<Button>();
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
+            return button;
         }
     }
 }
