@@ -6,15 +6,14 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/unity-android.yml"
-      - "client/Unity/Assets/Editor/RagnarokAndroidBuildEntryPoint.cs"
-      - "client/Unity/Assets/packages.config"
+      - "client/Unity/**"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-android:
-    name: Build Unity Android ARM64 APK
+    name: Build, verify and publish Android update
     runs-on: ubuntu-latest
     steps:
       - name: Check Unity license secret
@@ -29,16 +28,6 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-
-      # Cache only the global NuGet download cache. Unity's Assets/Packages
-      # must be recreated from packages.config on every clean checkout.
-      - name: Cache Unity NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-unity-nuget-${{ hashFiles('client/Unity/Assets/packages.config') }}
-          restore-keys: |
-            ${{ runner.os }}-unity-nuget-
 
       - name: Set up .NET for NuGet restore
         uses: actions/setup-dotnet@v4
@@ -57,27 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           test -d client/Unity/Assets/Packages
-          find client/Unity/Assets/Packages -type f -name '*.dll' -print | sort
-          for assembly in \
-            Microsoft.AspNetCore.Connections.Abstractions \
-            Microsoft.Bcl.TimeProvider \
-            Microsoft.Bcl.AsyncInterfaces \
-            Microsoft.Extensions.Features \
-            Microsoft.Extensions.DependencyInjection \
-            Microsoft.Extensions.DependencyInjection.Abstractions \
-            Microsoft.Extensions.Logging \
-            Microsoft.Extensions.Logging.Abstractions \
-            Microsoft.Extensions.Options \
-            Microsoft.Extensions.Primitives \
-            System.Buffers \
-            System.Diagnostics.DiagnosticSource \
-            System.IO.Pipelines \
-            System.Memory \
-            System.Runtime.CompilerServices.Unsafe \
-            System.Text.Json \
-            System.Text.Encodings.Web \
-            System.Threading.Channels \
-            System.Threading.Tasks.Extensions; do
+          for assembly in Microsoft.AspNetCore.Connections.Abstractions Microsoft.Bcl.TimeProvider Microsoft.Bcl.AsyncInterfaces Microsoft.Extensions.Features Microsoft.Extensions.DependencyInjection Microsoft.Extensions.DependencyInjection.Abstractions Microsoft.Extensions.Logging Microsoft.Extensions.Logging.Abstractions Microsoft.Extensions.Options Microsoft.Extensions.Primitives System.Buffers System.Diagnostics.DiagnosticSource System.IO.Pipelines System.Memory System.Runtime.CompilerServices.Unsafe System.Text.Json System.Text.Encodings.Web System.Threading.Channels System.Threading.Tasks.Extensions; do
             if ! find client/Unity/Assets/Packages -type f -name "${assembly}.dll" -print -quit | grep -q .; then
               echo "::error::NuGet restore did not produce ${assembly}.dll"
               exit 1
@@ -90,23 +59,31 @@ jobs:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
         with:
           projectPath: client/Unity
           targetPlatform: Android
           androidExportType: androidPackage
           androidTargetSdkVersion: 35
           buildMethod: RagnarokAndroidBuildEntryPoint.Build
-          versioning: Semantic
+          versioning: None
           allowDirtyBuild: true
 
-      - name: Save Unity NuGet cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-unity-nuget-${{ hashFiles('client/Unity/Assets/packages.config') }}
+      - name: Verify APK output
+        run: |
+          test -s client/Unity/Build/PrivateRagnarok.apk
+          ls -lh client/Unity/Build/PrivateRagnarok.apk
 
-      - name: Upload APK
+      - name: Publish versioned GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.${{ github.run_number }}
+          name: Private Ragnarok v0.1.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: client/Unity/Build/PrivateRagnarok.apk
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: Private-Ragnarok-Android-APK
