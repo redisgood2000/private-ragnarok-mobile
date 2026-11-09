@@ -34,7 +34,6 @@ namespace PrivateRagnarok.Client
         {
             GameObject prefab = null;
             string failure = null;
-
 #if UNITY_ANDROID && !UNITY_EDITOR
             using (var request = UnityWebRequest.Get(ManifestUrl + "?t=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds()))
             {
@@ -44,75 +43,70 @@ namespace PrivateRagnarok.Client
                 yield return request.SendWebRequest();
 
                 if (request.result != UnityWebRequest.Result.Success)
-                {
                     failure = "Content server unavailable; using built-in world.";
-                }
                 else
                 {
                     RemoteContentManifest manifest = null;
                     try { manifest = JsonUtility.FromJson<RemoteContentManifest>(request.downloadHandler.text); }
                     catch (Exception e) { failure = "Patch manifest could not be read: " + e.Message; }
 
-                    if (manifest != null && manifest.patchEnabled)
+                    if (manifest != null && manifest.patchEnabled && failure == null)
                     {
                         if (!IsValidManifest(manifest))
-                        {
                             failure = "Patch manifest is incomplete or has an unsafe URL.";
-                        }
                         else
                         {
                             var directory = Path.Combine(Application.persistentDataPath, "content-patches");
-                            var bundlePath = Path.Combine(directory, Path.GetFileName(manifest.patchBundleName));
-                            try
+                            var bundlePath = Path.Combine(directory, manifest.patchBundleName);
+                            try { Directory.CreateDirectory(directory); }
+                            catch (Exception e) { failure = "Patch cache could not be created: " + e.Message; }
+
+                            if (failure == null && (!File.Exists(bundlePath) || !HashMatches(bundlePath, manifest.patchSha256)))
                             {
-                                Directory.CreateDirectory(directory);
-                                if (!File.Exists(bundlePath) || !HashMatches(bundlePath, manifest.patchSha256))
+                                using (var bundleRequest = UnityWebRequest.Get(manifest.patchBundleUrl))
                                 {
-                                    using (var bundleRequest = UnityWebRequest.Get(manifest.patchBundleUrl))
+                                    bundleRequest.timeout = 90;
+                                    bundleRequest.downloadHandler = new DownloadHandlerBuffer();
+                                    yield return bundleRequest.SendWebRequest();
+                                    if (bundleRequest.result != UnityWebRequest.Result.Success)
+                                        failure = "Patch download failed: " + bundleRequest.error;
+                                    else
                                     {
-                                        bundleRequest.timeout = 90;
-                                        bundleRequest.downloadHandler = new DownloadHandlerBuffer();
-                                        yield return bundleRequest.SendWebRequest();
-                                        if (bundleRequest.result != UnityWebRequest.Result.Success)
-                                            failure = "Patch download failed: " + bundleRequest.error;
+                                        var bytes = bundleRequest.downloadHandler.data;
+                                        if (bytes == null || !HashMatches(bytes, manifest.patchSha256))
+                                            failure = "Patch integrity check failed; built-in world will be used.";
                                         else
                                         {
-                                            var bytes = bundleRequest.downloadHandler.data;
-                                            if (bytes == null || !HashMatches(bytes, manifest.patchSha256))
-                                                failure = "Patch integrity check failed; built-in world will be used.";
-                                            else
+                                            try
                                             {
                                                 var temporaryPath = bundlePath + ".download";
                                                 File.WriteAllBytes(temporaryPath, bytes);
                                                 if (File.Exists(bundlePath)) File.Delete(bundlePath);
                                                 File.Move(temporaryPath, bundlePath);
                                             }
-                                        }
-                                    }
-                                }
-
-                                if (failure == null)
-                                {
-                                    if (loadedBundle != null) loadedBundle.Unload(true);
-                                    loadedBundle = AssetBundle.LoadFromFile(bundlePath);
-                                    if (loadedBundle == null)
-                                        failure = "Downloaded patch is not a valid Unity AssetBundle.";
-                                    else
-                                    {
-                                        prefab = loadedBundle.LoadAsset<GameObject>(manifest.worldPrefab);
-                                        if (prefab == null)
-                                            failure = "Patch is valid but its configured world prefab was not found.";
-                                        else
-                                        {
-                                            loadedVersion = manifest.patchVersion;
-                                            if (status != null) status("Content patch " + loadedVersion + " loaded.");
+                                            catch (Exception e) { failure = "Patch could not be cached: " + e.Message; }
                                         }
                                     }
                                 }
                             }
-                            catch (Exception e)
+
+                            if (failure == null)
                             {
-                                failure = "Patch could not be installed: " + e.Message;
+                                if (loadedBundle != null) loadedBundle.Unload(true);
+                                loadedBundle = AssetBundle.LoadFromFile(bundlePath);
+                                if (loadedBundle == null)
+                                    failure = "Downloaded patch is not a valid Unity AssetBundle.";
+                                else
+                                {
+                                    prefab = loadedBundle.LoadAsset<GameObject>(manifest.worldPrefab);
+                                    if (prefab == null)
+                                        failure = "Patch is valid but its configured world prefab was not found.";
+                                    else
+                                    {
+                                        loadedVersion = manifest.patchVersion;
+                                        if (status != null) status("Content patch " + loadedVersion + " loaded.");
+                                    }
+                                }
                             }
                         }
                     }
@@ -121,7 +115,6 @@ namespace PrivateRagnarok.Client
 #else
             failure = "Remote content patches are loaded in the Android build.";
 #endif
-
             if (!string.IsNullOrEmpty(failure) && status != null) status(failure);
             completed?.Invoke(prefab);
         }
