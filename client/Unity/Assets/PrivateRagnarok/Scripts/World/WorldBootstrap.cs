@@ -47,7 +47,16 @@ namespace PrivateRagnarok.Client
 
         private static Material MakeMaterial(string materialName, Color color)
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            // Load the custom shader from Resources so Unity cannot strip it
+            // merely because its name is resolved dynamically at runtime.
+            var shader = Resources.Load<Shader>("PrivateRagnarok/World");
+            if (shader == null)
+                shader = Shader.Find("Universal Render Pipeline/Lit") ??
+                         Shader.Find("Standard") ??
+                         Shader.Find("Unlit/Color");
+            if (shader == null)
+                throw new System.InvalidOperationException(
+                    "No supported world shader is available. Expected Resources/PrivateRagnarok/World.shader.");
             var material = new Material(shader) { name = materialName, color = color };
             return material;
         }
