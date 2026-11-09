@@ -2,10 +2,6 @@ name: Unity Android APK
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "client/Unity/**"
-      - ".github/workflows/unity-android.yml"
 
 permissions:
   contents: read
@@ -17,8 +13,10 @@ jobs:
     steps:
       - name: Check Unity license secret
         shell: bash
+        env:
+          UNITY_LICENSE_SECRET: ${{ secrets.UNITY_LICENSE }}
         run: |
-          if [ -z "${{ secrets.UNITY_LICENSE }}" ]; then
+          if [ -z "$UNITY_LICENSE_SECRET" ]; then
             echo "::error::Add the UNITY_LICENSE repository secret before running this workflow."
             exit 1
           fi
