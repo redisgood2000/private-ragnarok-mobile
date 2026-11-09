@@ -27,6 +27,7 @@ namespace PrivateRagnarok.Client
         private Transform localPlayer;
         private ThirdPersonPrototypeController localMovement;
         private MobileMovementInput mobileInput;
+        private Transform movementCamera;
         private Vector3 localTarget;
         private float localTargetYaw;
         private bool hasLocalSnapshot;
@@ -44,6 +45,8 @@ namespace PrivateRagnarok.Client
             mobileInput = touchInput;
             if (localMovement != null) localMovement.NetworkControlled = true;
         }
+
+        public void SetMovementCamera(Transform camera) => movementCamera = camera;
 
         public void ConfigureAndConnect(string accessToken, string id, string displayName, string baseUrl)
         {
@@ -149,6 +152,16 @@ namespace PrivateRagnarok.Client
                     ? mobileInput.Direction.x : Input.GetAxisRaw("Horizontal");
                 var z = mobileInput != null && Input.touchCount > 0
                     ? mobileInput.Direction.y : Input.GetAxisRaw("Vertical");
+                if (movementCamera != null)
+                {
+                    var forward = movementCamera.forward;
+                    var right = movementCamera.right;
+                    forward.y = 0f; right.y = 0f;
+                    forward.Normalize(); right.Normalize();
+                    var worldDirection = forward * z + right * x;
+                    x = worldDirection.x;
+                    z = worldDirection.z;
+                }
                 _ = SendInputAsync(x, z, ++inputSequence);
             }
         }
