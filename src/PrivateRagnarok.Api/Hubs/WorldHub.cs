@@ -4,13 +4,12 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PrivateRagnarok.Api.Data;
-using PrivateRagnarok.Api.Models;
 
 namespace PrivateRagnarok.Api.Hubs;
 
 /// <summary>
-/// Single-process authoritative movement foundation. Clients submit direction intent,
-/// while the server owns position, character progression, and persistence.
+/// Server-authoritative movement for registered characters and ephemeral demo guests.
+/// Demo guests are isolated from the account database and disappear when disconnected.
 /// </summary>
 public sealed class WorldHub(GameDbContext db, ILogger<WorldHub> logger) : Hub
 {
@@ -22,32 +21,44 @@ public sealed class WorldHub(GameDbContext db, ILogger<WorldHub> logger) : Hub
 
     public override async Task OnConnectedAsync()
     {
-        var playerIdText = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        var playerId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         var username = Context.User?.Identity?.Name;
-        if (!Guid.TryParse(playerIdText, out var playerId) || string.IsNullOrWhiteSpace(username))
+        if (!Guid.TryParse(playerId, out _) || string.IsNullOrWhiteSpace(username))
         {
             Context.Abort();
             return;
         }
 
-        // Idempotent bootstrap supports existing accounts without resetting saved characters.
-        await db.Database.ExecuteSqlInterpolatedAsync($"""
-            INSERT INTO "PlayerCharacters"
-                ("PlayerId", "CharacterName", "JobClass", "Level", "BaseExperience",
-                 "X", "Y", "Z", "Yaw", "UpdatedAt")
-            VALUES ({playerId}, {username}, 'Novice', 1, 0, 0, 0, -7, 0, {DateTimeOffset.UtcNow})
-            ON CONFLICT ("PlayerId") DO NOTHING
-            """);
+        var isDemo = Context.User?.FindFirst("demo")?.Value == "true";
+        PlayerSession session;
+        if (isDemo)
+        {
+            session = new PlayerSession(Context.ConnectionId, playerId!, username,
+                1, "Novice", 0f, 0f, -7f, 0f, true);
+        }
+        else
+        {
+            var accountId = Guid.Parse(playerId!);
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "PlayerCharacters"
+                    ("PlayerId", "CharacterName", "JobClass", "Level", "BaseExperience",
+                     "X", "Y", "Z", "Yaw", "UpdatedAt")
+                VALUES ({accountId}, {username}, 'Novice', 1, 0, 0, 0, -7, 0, {DateTimeOffset.UtcNow})
+                ON CONFLICT ("PlayerId") DO NOTHING
+                """);
 
-        var character = await db.Characters.AsNoTracking()
-            .SingleAsync(x => x.PlayerId == playerId);
-        var session = new PlayerSession(Context.ConnectionId, playerIdText!, character.CharacterName,
-            character.Level, character.JobClass, character.X, character.Y, character.Z, character.Yaw);
-        Online.AddOrUpdate(playerIdText!, session, (_, _) => session);
+            var character = await db.Characters.AsNoTracking()
+                .SingleAsync(x => x.PlayerId == accountId);
+            session = new PlayerSession(Context.ConnectionId, playerId!, character.CharacterName,
+                character.Level, character.JobClass, character.X, character.Y, character.Z,
+                character.Yaw, false);
+        }
 
+        Online.AddOrUpdate(playerId!, session, (_, _) => session);
+        await Groups.AddToGroupAsync(Context.ConnectionId, "world");
         await Clients.Caller.SendAsync("PlayerSpawned", session.Snapshot());
         await Clients.Caller.SendAsync("OnlinePlayers",
-            Online.Values.Where(x => x.PlayerId != playerIdText).Select(x => x.Snapshot()).ToArray());
+            Online.Values.Where(x => x.PlayerId != playerId).Select(x => x.Snapshot()).ToArray());
         await Clients.Others.SendAsync("PlayerJoined", session.Snapshot());
         await base.OnConnectedAsync();
     }
@@ -97,7 +108,7 @@ public sealed class WorldHub(GameDbContext db, ILogger<WorldHub> logger) : Hub
         }
 
         if (snapshot is not null)
-            await Clients.All.SendAsync("PlayerMoved", snapshot);
+            await Clients.Group("world").SendAsync("PlayerMoved", snapshot);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -109,27 +120,30 @@ public sealed class WorldHub(GameDbContext db, ILogger<WorldHub> logger) : Hub
             ((ICollection<KeyValuePair<string, PlayerSession>>)Online).Remove(
                 new KeyValuePair<string, PlayerSession>(playerId, session)))
         {
-            try
+            if (!session.IsDemo)
             {
-                var character = await db.Characters.SingleOrDefaultAsync(x => x.PlayerId.ToString() == playerId);
-                if (character is not null)
+                try
                 {
-                    lock (session.Sync)
+                    var accountId = Guid.Parse(playerId);
+                    var character = await db.Characters.SingleOrDefaultAsync(x => x.PlayerId == accountId);
+                    if (character is not null)
                     {
-                        character.X = session.X;
-                        character.Y = session.Y;
-                        character.Z = session.Z;
-                        character.Yaw = session.Yaw;
+                        lock (session.Sync)
+                        {
+                            character.X = session.X;
+                            character.Y = session.Y;
+                            character.Z = session.Z;
+                            character.Yaw = session.Yaw;
+                        }
+                        character.UpdatedAt = DateTimeOffset.UtcNow;
+                        await db.SaveChangesAsync();
                     }
-                    character.UpdatedAt = DateTimeOffset.UtcNow;
-                    await db.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Could not persist character position for player {PlayerId}", playerId);
                 }
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Could not persist character position for player {PlayerId}", playerId);
-            }
-
             await Clients.Others.SendAsync("PlayerLeft", playerId);
         }
         await base.OnDisconnectedAsync(exception);
@@ -150,6 +164,7 @@ public sealed class WorldHub(GameDbContext db, ILogger<WorldHub> logger) : Hub
         public string Username { get; init; } = "";
         public int Level { get; init; }
         public string JobClass { get; init; } = "Novice";
+        public bool IsDemo { get; init; }
         public float X { get; init; }
         public float Y { get; init; }
         public float Z { get; init; }
@@ -158,7 +173,7 @@ public sealed class WorldHub(GameDbContext db, ILogger<WorldHub> logger) : Hub
 
     private sealed class PlayerSession(
         string connectionId, string playerId, string username, int level, string jobClass,
-        float x, float y, float z, float yaw)
+        float x, float y, float z, float yaw, bool isDemo)
     {
         public readonly object Sync = new();
         public string ConnectionId { get; } = connectionId;
@@ -166,6 +181,7 @@ public sealed class WorldHub(GameDbContext db, ILogger<WorldHub> logger) : Hub
         public string Username { get; } = username;
         public int Level { get; } = level;
         public string JobClass { get; } = jobClass;
+        public bool IsDemo { get; } = isDemo;
         public float X = x;
         public float Y = y;
         public float Z = z;
@@ -176,7 +192,7 @@ public sealed class WorldHub(GameDbContext db, ILogger<WorldHub> logger) : Hub
         public PlayerSnapshot Snapshot() => new()
         {
             PlayerId = PlayerId, Username = Username, Level = Level, JobClass = JobClass,
-            X = X, Y = Y, Z = Z, Yaw = Yaw
+            IsDemo = IsDemo, X = X, Y = Y, Z = Z, Yaw = Yaw
         };
     }
 }
