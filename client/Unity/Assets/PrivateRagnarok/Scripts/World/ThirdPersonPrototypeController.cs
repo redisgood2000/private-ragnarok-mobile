@@ -18,16 +18,21 @@ namespace PrivateRagnarok.Client
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
-            if (mobileInput == null) mobileInput = GetComponent<MobileMovementInput>();
+            // WorldBootstrap may add components at runtime. Resolve the joystick again in Update
+            // if Awake ran before the joystick was attached.
+            mobileInput = GetComponent<MobileMovementInput>();
         }
 
         private void Update()
         {
             if (NetworkControlled || controller == null || !controller.enabled) return;
 
-            // The previous controller only read keyboard axes. Android has no physical
-            // WASD input, so consume the on-screen joystick direction on touch devices.
-            var input = mobileInput != null && Input.touchCount > 0
+            if (mobileInput == null)
+                mobileInput = GetComponent<MobileMovementInput>();
+
+            // Always read the virtual joystick when it exists. Requiring touchCount here
+            // can drop input on Android devices where Unity's touch polling order differs.
+            var input = mobileInput != null
                 ? mobileInput.Direction
                 : new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
             input = Vector2.ClampMagnitude(input, 1f);
