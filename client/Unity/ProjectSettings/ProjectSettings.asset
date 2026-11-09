@@ -4,6 +4,7 @@
 PlayerSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 26
+  activeInputHandler: 0
   productGUID: 00000000000000000000000000000000
   companyName: PrivateRagnarok
   productName: PrivateRagnarok
