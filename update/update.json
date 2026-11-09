@@ -2,5 +2,11 @@
   "enabled": true,
   "latestVersion": "0.1.45",
   "apkUrl": "https://github.com/redisgood2000/private-ragnarok-mobile/releases/download/v0.1.45/PrivateRagnarok.apk",
-  "releaseNotes": "Latest available Private Ragnarok build."
+  "releaseNotes": "Latest available Private Ragnarok build.",
+  "patchEnabled": false,
+  "patchVersion": "0.0.0",
+  "patchBundleUrl": "",
+  "patchBundleName": "worldcontent",
+  "patchSha256": "",
+  "worldPrefab": "WorldRoot"
 }
