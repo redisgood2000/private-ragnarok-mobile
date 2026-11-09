@@ -33,31 +33,46 @@ namespace PrivateRagnarok.Client
             if (transform.childCount > 0) return;
             CreateMaterials();
             if (remoteWorldPrefab != null)
+            {
+                // A remote WorldRoot already contains the environment and lighting.
                 Instantiate(remoteWorldPrefab, transform, false);
+            }
             else
             {
                 BuildGroundAndPaths();
                 BuildTownBuildings();
                 BuildDecorations();
+                BuildLighting();
             }
-            BuildLighting();
             BuildPlayer();
             BuildHudAnchor();
         }
 
-        private void CreateMaterials()
+        private void CreateMaterials(bool persistForPatch = false)
         {
-            groundMat = MakeMaterial("Meadow", new Color(0.30f, 0.48f, 0.28f));
-            pathMat = MakeMaterial("Warm cobblestone", new Color(0.58f, 0.49f, 0.37f));
-            wallMat = MakeMaterial("Limestone plaster", new Color(0.78f, 0.69f, 0.52f));
-            roofMat = MakeMaterial("Terracotta roof", new Color(0.48f, 0.18f, 0.13f));
-            woodMat = MakeMaterial("Dark timber", new Color(0.25f, 0.15f, 0.09f));
-            stoneMat = MakeMaterial("Stone", new Color(0.38f, 0.39f, 0.36f));
-            accentMat = MakeMaterial("Banner blue", new Color(0.12f, 0.30f, 0.52f));
-            playerMat = MakeMaterial("Player tunic", new Color(0.18f, 0.42f, 0.68f));
+            groundMat = MakeMaterial("Meadow", new Color(0.30f, 0.48f, 0.28f), persistForPatch);
+            pathMat = MakeMaterial("Warm cobblestone", new Color(0.58f, 0.49f, 0.37f), persistForPatch);
+            wallMat = MakeMaterial("Limestone plaster", new Color(0.78f, 0.69f, 0.52f), persistForPatch);
+            roofMat = MakeMaterial("Terracotta roof", new Color(0.48f, 0.18f, 0.13f), persistForPatch);
+            woodMat = MakeMaterial("Dark timber", new Color(0.25f, 0.15f, 0.09f), persistForPatch);
+            stoneMat = MakeMaterial("Stone", new Color(0.38f, 0.39f, 0.36f), persistForPatch);
+            accentMat = MakeMaterial("Banner blue", new Color(0.12f, 0.30f, 0.52f), persistForPatch);
+            playerMat = MakeMaterial("Player tunic", new Color(0.18f, 0.42f, 0.68f), persistForPatch);
         }
 
-        private Material MakeMaterial(string materialName, Color color)
+        /// <summary>Editor-only build hook used to bake the procedural town into a patchable prefab.</summary>
+        public void BuildEnvironmentForContentPatch()
+        {
+            if (transform.childCount > 0)
+                throw new System.InvalidOperationException("Content patch root must be empty.");
+            CreateMaterials(true);
+            BuildGroundAndPaths();
+            BuildTownBuildings();
+            BuildDecorations();
+            BuildLighting();
+        }
+
+        private Material MakeMaterial(string materialName, Color color, bool persistForPatch = false)
         {
             // A direct scene reference avoids runtime name lookup and shader stripping.
             var shader = worldShader;
@@ -66,6 +81,31 @@ namespace PrivateRagnarok.Client
             if (shader == null)
                 throw new System.InvalidOperationException(
                     "World shader reference is missing. Rebuild the startup scene so WorldBootstrap.worldShader references Assets/Resources/PrivateRagnarok/World.shader.");
+#if UNITY_EDITOR
+            if (persistForPatch)
+            {
+                const string folder = "Assets/RemoteContent/GeneratedMaterials";
+                if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/RemoteContent"))
+                    UnityEditor.AssetDatabase.CreateFolder("Assets", "RemoteContent");
+                if (!UnityEditor.AssetDatabase.IsValidFolder(folder))
+                    UnityEditor.AssetDatabase.CreateFolder("Assets/RemoteContent", "GeneratedMaterials");
+
+                var safeName = materialName.Replace(" ", "_");
+                var assetPath = folder + "/" + safeName + ".mat";
+                var existing = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(assetPath);
+                if (existing != null)
+                {
+                    existing.shader = shader;
+                    existing.color = color;
+                    UnityEditor.EditorUtility.SetDirty(existing);
+                    return existing;
+                }
+
+                var persistent = new Material(shader) { name = materialName, color = color };
+                UnityEditor.AssetDatabase.CreateAsset(persistent, assetPath);
+                return persistent;
+            }
+#endif
             return new Material(shader) { name = materialName, color = color };
         }
 
