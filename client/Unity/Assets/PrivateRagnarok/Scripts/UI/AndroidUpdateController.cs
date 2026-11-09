@@ -17,6 +17,7 @@ namespace PrivateRagnarok.Client
 
     public sealed class AndroidUpdateController : MonoBehaviour
     {
+        private const string ApkName = "PrivateRagnarok.apk";
         private const string ManifestUrl = "https://raw.githubusercontent.com/redisgood2000/private-ragnarok-mobile/main/update/update.json";
         [SerializeField] private Text statusText;
         [SerializeField] private Text updateDetailsText;
