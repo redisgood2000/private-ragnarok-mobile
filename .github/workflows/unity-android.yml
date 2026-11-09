@@ -130,15 +130,8 @@ jobs:
             echo "::notice::APK v1/v2 signatures verified. Ignoring only the two known unsigned metadata warnings; v2 covers the complete APK."
           fi
 
-      - name: Publish versioned GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v0.1.${{ github.run_number }}
-          name: Private Ragnarok v0.1.${{ github.run_number }}
-          target_commitish: ${{ github.sha }}
-          generate_release_notes: true
-          files: client/Unity/Build/PrivateRagnarok.apk
-
+      # Always preserve a downloadable APK even if GitHub Releases has a
+      # transient API outage. The release is a convenience, not the build output.
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -146,3 +139,13 @@ jobs:
           path: client/Unity/Build/PrivateRagnarok.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish versioned GitHub release
+        uses: softprops/action-gh-release@v2
+        continue-on-error: true
+        with:
+          tag_name: v0.1.${{ github.run_number }}
+          name: Private Ragnarok v0.1.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: client/Unity/Build/PrivateRagnarok.apk
