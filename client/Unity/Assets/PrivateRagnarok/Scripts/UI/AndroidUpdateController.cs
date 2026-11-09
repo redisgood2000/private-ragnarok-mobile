@@ -29,16 +29,29 @@ namespace PrivateRagnarok.Client
         private bool checking;
         private bool downloading;
 
-        public void Initialize(Text status, Text details, Button update, Button later, GameObject promptPanel)
+        private void Awake()
         {
-            statusText = status; updateDetailsText = details;
-            updateButton = update; laterButton = later; updatePromptPanel = promptPanel;
+            // These references are serialized into the generated scene. Do not initialize
+            // from the Editor scene generator: editor-time listeners/coroutines are not
+            // persisted into the installed Android player.
             if (updatePromptPanel != null) updatePromptPanel.SetActive(false);
-            if (updateButton != null) updateButton.onClick.AddListener(DownloadAndInstall);
-            if (laterButton != null) laterButton.onClick.AddListener(HidePrompt);
-            if (updateButton != null) updateButton.gameObject.SetActive(false);
-            if (laterButton != null) laterButton.gameObject.SetActive(false);
+            if (updateButton != null)
+            {
+                updateButton.onClick.RemoveListener(DownloadAndInstall);
+                updateButton.onClick.AddListener(DownloadAndInstall);
+            }
+            if (laterButton != null)
+            {
+                laterButton.onClick.RemoveListener(HidePrompt);
+                laterButton.onClick.AddListener(HidePrompt);
+            }
+        }
+
+        private void Start()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
             StartCoroutine(CheckForUpdate());
+#endif
         }
 
         public IEnumerator CheckForUpdate()
