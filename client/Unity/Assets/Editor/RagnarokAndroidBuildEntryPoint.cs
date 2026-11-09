@@ -90,7 +90,13 @@ public static class RagnarokAndroidBuildEntryPoint
         var appServices = new GameObject("AppServices");
         appServices.AddComponent<PrivateRagnarok.Client.RemoteContentPatcher>();
         var updater = appServices.AddComponent<PrivateRagnarok.Client.AndroidUpdateController>();
-        updater.Initialize(status, updateDetails, updateButton, laterButton, prompt.gameObject);
+        var updaterSerialized = new SerializedObject(updater);
+        updaterSerialized.FindProperty("statusText").objectReferenceValue = status;
+        updaterSerialized.FindProperty("updateDetailsText").objectReferenceValue = updateDetails;
+        updaterSerialized.FindProperty("updateButton").objectReferenceValue = updateButton;
+        updaterSerialized.FindProperty("laterButton").objectReferenceValue = laterButton;
+        updaterSerialized.FindProperty("updatePromptPanel").objectReferenceValue = prompt.gameObject;
+        updaterSerialized.ApplyModifiedPropertiesWithoutUndo();
 
         var controller = appServices.AddComponent<PrivateRagnarok.Client.LoginScreenController>();
         var serialized = new SerializedObject(controller);
