@@ -24,6 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Restore Unity NuGet dependencies
+        run: |
+          dotnet tool install --global NuGetForUnity.Cli --version 4.5.0
+          dotnet nugetforunity restore client/Unity
+
       - name: Build Android APK
         uses: game-ci/unity-builder@v4
         env:
