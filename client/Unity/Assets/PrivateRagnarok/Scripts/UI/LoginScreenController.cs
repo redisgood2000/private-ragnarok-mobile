@@ -21,6 +21,10 @@ namespace PrivateRagnarok.Client
         [SerializeField] private Text statusText;
         [SerializeField] private GameObject loginPanel;
 
+        private bool demoEntered;
+        private bool busy;
+        private int lastManualTouchFrame = -1;
+
         private void Awake()
         {
             if (authClient == null) authClient = GetComponent<ApiAuthClient>();
@@ -29,13 +33,52 @@ namespace PrivateRagnarok.Client
             if (registerButton != null) registerButton.onClick.AddListener(Register);
             if (demoButton != null) demoButton.onClick.AddListener(EnterDemo);
             SetBusy(false);
-            
+        }
+
+        // Fallback for Android devices where Unity's StandaloneInputModule does not
+        // deliver UI pointer events. Hit-test the actual button RectTransforms using
+        // the raw touch coordinates, then invoke the same button action.
+        private void Update()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (loginPanel == null || !loginPanel.activeInHierarchy || Input.touchCount == 0)
+                return;
+
+            foreach (var touch in Input.touches)
+            {
+                if (touch.phase != TouchPhase.Began || lastManualTouchFrame == Time.frameCount)
+                    continue;
+
+                if (TryManualButtonHit(demoButton, touch.position) ||
+                    TryManualButtonHit(loginButton, touch.position) ||
+                    TryManualButtonHit(registerButton, touch.position))
+                {
+                    lastManualTouchFrame = Time.frameCount;
+                    break;
+                }
+            }
+#endif
+        }
+
+        private static bool TryManualButtonHit(Button button, Vector2 screenPosition)
+        {
+            if (button == null || !button.isActiveAndEnabled || !button.interactable)
+                return false;
+
+            var rect = button.transform as RectTransform;
+            if (rect == null || !RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    rect, screenPosition, null, out var localPoint) || !rect.rect.Contains(localPoint))
+                return false;
+
+            button.onClick.Invoke();
+            return true;
         }
 
         // Offline prototype mode: no backend or server URL is required.
-        // The local WorldBootstrap already creates the town, player and camera.
         private void EnterDemo()
         {
+            if (demoEntered) return;
+            demoEntered = true;
             if (loginPanel != null) loginPanel.SetActive(false);
             if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
             if (worldNetworkClient != null) worldNetworkClient.enabled = false;
@@ -44,7 +87,7 @@ namespace PrivateRagnarok.Client
 
         private void Login()
         {
-            if (!ApplyServerUrl() || !ValidateInputs(false)) return;
+            if (busy || !ApplyServerUrl() || !ValidateInputs(false)) return;
             SetBusy(true);
             StartCoroutine(authClient.Login(usernameInput.text.Trim(), passwordInput.text,
                 OnAuthenticated, OnFailed));
@@ -52,7 +95,7 @@ namespace PrivateRagnarok.Client
 
         private void Register()
         {
-            if (!ApplyServerUrl() || !ValidateInputs(true)) return;
+            if (busy || !ApplyServerUrl() || !ValidateInputs(true)) return;
             SetBusy(true);
             StartCoroutine(authClient.Register(usernameInput.text.Trim(), passwordInput.text,
                 inviteCodeInput.text.Trim(), OnAuthenticated, OnFailed));
@@ -70,13 +113,14 @@ namespace PrivateRagnarok.Client
 
         private bool ValidateInputs(bool needsInvite)
         {
-            if (string.IsNullOrWhiteSpace(usernameInput.text) ||
+            if (usernameInput == null || passwordInput == null ||
+                string.IsNullOrWhiteSpace(usernameInput.text) ||
                 string.IsNullOrWhiteSpace(passwordInput.text))
             {
                 Show("Enter your username and password.");
                 return false;
             }
-            if (needsInvite && string.IsNullOrWhiteSpace(inviteCodeInput.text))
+            if (needsInvite && (inviteCodeInput == null || string.IsNullOrWhiteSpace(inviteCodeInput.text)))
             {
                 Show("An invitation code is required.");
                 return false;
@@ -112,12 +156,13 @@ namespace PrivateRagnarok.Client
             Show(message);
         }
 
-        private void SetBusy(bool busy)
+        private void SetBusy(bool value)
         {
-            if (loginButton != null) loginButton.interactable = !busy;
-            if (registerButton != null) registerButton.interactable = !busy;
-            if (demoButton != null) demoButton.interactable = !busy;
-            if (busy) Show("Connecting to the game server...");
+            busy = value;
+            if (loginButton != null) loginButton.interactable = !value;
+            if (registerButton != null) registerButton.interactable = !value;
+            if (demoButton != null) demoButton.interactable = !value;
+            if (value) Show("Connecting to the game server...");
         }
 
         private void Show(string message)
