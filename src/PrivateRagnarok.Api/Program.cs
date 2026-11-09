@@ -65,7 +65,7 @@ app.MapPost("/api/auth/register", async (RegisterRequest req, GameDbContext db,
     var normalized = username.ToUpperInvariant();
     if (await db.Players.AnyAsync(p => p.NormalizedUsername == normalized, ct))
         return Results.BadRequest(new { error = "Invalid registration details." });
-    var player = new PlayerAccount { Username = username, NormalizedUsername = normalized };
+    var player = new PlayerAccount { Username = username, NormalizedUsername = normalized, PasswordHash = string.Empty };
     player.PasswordHash = hasher.HashPassword(player, req.Password);
     db.Players.Add(player);
     try { await db.SaveChangesAsync(ct); }
