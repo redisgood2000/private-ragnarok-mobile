@@ -11,6 +11,8 @@ namespace PrivateRagnarok.Client
         [SerializeField] private Transform cameraTransform;
         private CharacterController controller;
 
+        public Transform CameraTransform { get => cameraTransform; set => cameraTransform = value; }
+
         private void Awake() => controller = GetComponent<CharacterController>();
 
         private void Update()
