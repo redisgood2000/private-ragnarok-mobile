@@ -32,6 +32,7 @@ namespace PrivateRagnarok.Client
         [SerializeField] private string apiBaseUrl = "https://YOUR-API-HOST";
         [SerializeField, Min(3)] private int timeoutSeconds = 15;
 
+        public string ApiBaseUrl => apiBaseUrl;
         public string AccessToken { get; private set; }
         public AuthResponse CurrentUser { get; private set; }
 
