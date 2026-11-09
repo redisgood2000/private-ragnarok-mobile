@@ -25,7 +25,7 @@ Enter the public HTTPS API base URL in the login screen before logging in. The b
 Run the editor build method `PrivateRagnarok.Editor.AndroidBuildBootstrap.Build`. Output: `Build/PrivateRagnarok.apk`.
 
 ## GitHub Actions APK build
-The workflow `.github/workflows/unity-android.yml` is manual and requires a valid Unity license file in repository secret `UNITY_LICENSE`. Add `UNITY_EMAIL` and `UNITY_PASSWORD` only if required by your license activation method. Then run **Actions → Unity Android APK → Run workflow**. The APK is uploaded as the `Private-Ragnarok-Android-APK` artifact.
+The workflow `.github/workflows/unity-android.yml` is manual, restores NuGet dependencies in CI, and requires a valid Unity license file in repository secret `UNITY_LICENSE`. Add `UNITY_EMAIL` and `UNITY_PASSWORD` only if required by your license activation method. Then run **Actions → Unity Android APK → Run workflow**. The APK is uploaded as the `Private-Ragnarok-Android-APK` artifact.
 
 ## Important limitations
 This is a first playable-prototype target, not a finished MMORPG. Placeholder capsule characters and primitive buildings are used. There is no combat, skills, quests, NPC logic, inventory, character selection, persistent world state, reconnect token refresh, collision navigation, or production anti-cheat. The Unity client must pass an actual editor/Android build and device test before it can be called playable. Do not ship proprietary Ragnarok/Gravity assets unless you have the necessary rights.
