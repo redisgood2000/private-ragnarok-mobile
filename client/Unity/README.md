@@ -1,39 +1,31 @@
-# Unity Android client scaffold
+# Unity Android client
 
-This is the first Unity client source drop, not a complete Unity project export or APK yet.
+This folder is a Unity 2022.3.62f1 project scaffold. The editor build bootstrap generates the prototype scene and login UI, then builds an Android ARM64 APK.
 
-## Target
-- Unity 2022.3 LTS or newer
-- Android, IL2CPP, ARM64
-- Original/licensed 3D models, animations, maps, UI and audio only
-- API base URL must be HTTPS outside local development
+## Included prototype
+- Original procedural medieval town generated from Unity primitives.
+- Third-person camera, left-thumb joystick, and right-side camera orbit/pinch.
+- Invite-code registration and login over HTTPS.
+- Authenticated SignalR world connection, authoritative movement input, remote-player interpolation.
+- Editor menu: **Private Ragnarok → Generate Prototype Scene**.
+- Automated Android build method: `PrivateRagnarok.Editor.AndroidBuildBootstrap.Build`.
 
-## Add to a Unity project
-1. Create a Unity 3D (URP optional) project.
-2. Copy `Assets/PrivateRagnarok` into the project's `Assets` folder.
-3. Add TextMeshPro via Window > TextMeshPro > Import TMP Essential Resources.
-4. Create a Canvas with TMP_InputField username/password/invite fields, Button login/register, TMP_Text status and token display optional; assign them to `LoginScreenController`.
-5. Set API Base Url in the inspector to the backend URL.
-6. For Android, set Player Settings > Other Settings > Scripting Backend to IL2CPP and Target Architectures to ARM64.
+## Open in Unity
+1. Install Unity **2022.3.62f1** with Android Build Support, Android SDK & NDK tools, and OpenJDK.
+2. Open this `client/Unity` folder in Unity Hub.
+3. Allow Package Manager to resolve TextMeshPro, UGUI and NuGetForUnity.
+4. Import TMP Essential Resources if prompted.
+5. In NuGetForUnity, restore `Assets/packages.config` so `Microsoft.AspNetCore.SignalR.Client 8.0.7` and dependencies are installed.
+6. Open **Private Ragnarok → Generate Prototype Scene** and press Play.
 
-## SignalR package
-The backend hub is `/hubs/world`. Add the Microsoft.AspNetCore.SignalR.Client NuGet package compatible with the Unity scripting runtime using NuGetForUnity (or a vetted Unity-compatible package workflow). Do not copy arbitrary DLLs from untrusted sources. The hub accepts the JWT as the `access_token` query parameter for WebSocket negotiation/connection.
+## Configure a reachable backend
+Enter the public HTTPS API base URL in the login screen before logging in. The backend must already be deployed and reachable from the phone. A localhost address on the developer PC will not work from an Android phone. The current server stores multiplayer presence in process memory, so use one API instance for the prototype.
 
-The client source now includes authenticated SignalR connection lifecycle, online-player snapshots, join/leave events, server-authoritative movement input, remote-avatar interpolation, and a left-thumb mobile joystick. The server computes positions from normalized movement intent; the client does not submit world coordinates. Map collision, combat, inventory, character animation, token refresh, persistent world state, and multi-instance coordination are still outstanding.
+## Build APK locally
+Run the editor build method `PrivateRagnarok.Editor.AndroidBuildBootstrap.Build`. Output: `Build/PrivateRagnarok.apk`.
 
-## Security
-- Never ship the invite code or JWT signing key in the app.
-- Invite code is entered by the invited player and sent over HTTPS.
-- Keep access tokens in memory for this prototype; implement refresh/revocation before production.
-- Do not enable cleartext HTTP for production Android builds.
+## GitHub Actions APK build
+The workflow `.github/workflows/unity-android.yml` is manual and requires a valid Unity license file in repository secret `UNITY_LICENSE`. Add `UNITY_EMAIL` and `UNITY_PASSWORD` only if required by your license activation method. Then run **Actions → Unity Android APK → Run workflow**. The APK is uploaded as the `Private-Ragnarok-Android-APK` artifact.
 
-## Procedural town scene
-See `docs/UNITY_WORLD_PROTOTYPE.md`. Copy the scripts into a Unity project, add an empty GameObject with `WorldBootstrap`, and press Play to generate the original low-poly town. This is a local visual prototype only; it is not yet connected to the multiplayer server.
-
-## Multiplayer world scripts
-- `WorldNetworkClient.cs` — connects to `/hubs/world` after login, sends movement intent at 10 Hz, and interpolates server snapshots.
-- `MobileMovementInput.cs` — left-side touch joystick. The right side is reserved for camera orbit/pinch.
-- `WorldCameraFollow.cs` — camera-relative movement and orbit controls.
-- `WorldBootstrap.cs` — creates the original low-poly test town and wires the local avatar/network components.
-
-The backend currently keeps online sessions and positions in process memory. Run a single API instance for multiplayer tests; restarting it clears presence, and multiple replicas will not share positions.
+## Important limitations
+This is a first playable-prototype target, not a finished MMORPG. Placeholder capsule characters and primitive buildings are used. There is no combat, skills, quests, NPC logic, inventory, character selection, persistent world state, reconnect token refresh, collision navigation, or production anti-cheat. The Unity client must pass an actual editor/Android build and device test before it can be called playable. Do not ship proprietary Ragnarok/Gravity assets unless you have the necessary rights.
