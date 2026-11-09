@@ -45,7 +45,7 @@ namespace PrivateRagnarok.Client
 
         private void ReadOrbitInput()
         {
-            if (Input.touchCount == 1)
+            if (Input.touchCount == 1 && Input.GetTouch(0).position.x > Screen.width * 0.5f)
             {
                 var touch = Input.GetTouch(0);
                 if (touch.phase == TouchPhase.Moved)
@@ -54,7 +54,8 @@ namespace PrivateRagnarok.Client
                     pitch = Mathf.Clamp(pitch - touch.deltaPosition.y * lookSensitivity, minPitch, maxPitch);
                 }
             }
-            else if (Input.touchCount >= 2)
+            else if (Input.touchCount >= 2 && Input.GetTouch(0).position.x > Screen.width * 0.5f &&
+                     Input.GetTouch(1).position.x > Screen.width * 0.5f)
             {
                 var a = Input.GetTouch(0);
                 var b = Input.GetTouch(1);
