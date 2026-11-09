@@ -25,11 +25,21 @@ namespace PrivateRagnarok.Client
         [ContextMenu("Build Prototype World")]
         public void BuildWorld()
         {
+            BuildWorld(null);
+        }
+
+        public void BuildWorld(GameObject remoteWorldPrefab)
+        {
             if (transform.childCount > 0) return;
             CreateMaterials();
-            BuildGroundAndPaths();
-            BuildTownBuildings();
-            BuildDecorations();
+            if (remoteWorldPrefab != null)
+                Instantiate(remoteWorldPrefab, transform, false);
+            else
+            {
+                BuildGroundAndPaths();
+                BuildTownBuildings();
+                BuildDecorations();
+            }
             BuildLighting();
             BuildPlayer();
             BuildHudAnchor();
