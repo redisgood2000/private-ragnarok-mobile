@@ -10,6 +10,7 @@ namespace PrivateRagnarok.Client
         [SerializeField] private ApiAuthClient authClient;
         [SerializeField] private WorldNetworkClient worldNetworkClient;
         [Header("Inputs")]
+        [SerializeField] private TMP_InputField serverUrlInput;
         [SerializeField] private TMP_InputField usernameInput;
         [SerializeField] private TMP_InputField passwordInput;
         [SerializeField] private TMP_InputField inviteCodeInput;
@@ -32,7 +33,7 @@ namespace PrivateRagnarok.Client
 
         private void Login()
         {
-            if (!ValidateInputs(false)) return;
+            if (!ApplyServerUrl() || !ValidateInputs(false)) return;
             SetBusy(true);
             StartCoroutine(authClient.Login(usernameInput.text.Trim(), passwordInput.text,
                 OnAuthenticated, OnFailed));
@@ -40,10 +41,20 @@ namespace PrivateRagnarok.Client
 
         private void Register()
         {
-            if (!ValidateInputs(true)) return;
+            if (!ApplyServerUrl() || !ValidateInputs(true)) return;
             SetBusy(true);
             StartCoroutine(authClient.Register(usernameInput.text.Trim(), passwordInput.text,
                 inviteCodeInput.text.Trim(), OnAuthenticated, OnFailed));
+        }
+
+        private bool ApplyServerUrl()
+        {
+            if (serverUrlInput == null || authClient == null || !authClient.SetApiBaseUrl(serverUrlInput.text.Trim()))
+            {
+                Show("Enter your game server HTTPS address first.");
+                return false;
+            }
+            return true;
         }
 
         private bool ValidateInputs(bool needsInvite)
