@@ -45,6 +45,8 @@ jobs:
         with:
           projectPath: client/Unity
           targetPlatform: Android
+          androidExportType: androidPackage
+          androidTargetSdkVersion: 35
           buildMethod: PrivateRagnarok.Editor.AndroidBuildBootstrap.Build
           versioning: Semantic
           allowDirtyBuild: true
