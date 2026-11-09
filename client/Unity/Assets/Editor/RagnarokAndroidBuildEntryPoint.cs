@@ -36,7 +36,7 @@ public static class RagnarokAndroidBuildEntryPoint
         scaler.referenceResolution = new Vector2(1920, 1080);
 
         var panel = Rect("LoginPanel", canvasObject.transform, new Vector2(0.5f, 0.5f),
-            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(620, 690));
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(620, 760));
         panel.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.055f, 0.085f, 0.94f);
 
         var heading = MakeText("PRIVATE RAGNAROK", panel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
@@ -57,7 +57,8 @@ public static class RagnarokAndroidBuildEntryPoint
 
         var loginButton = MakeButton("LOGIN", panel, -475, new Color(0.16f, 0.36f, 0.57f), font);
         var registerButton = MakeButton("REGISTER", panel, -545, new Color(0.34f, 0.25f, 0.12f), font);
-        var status = MakeText("Enter your public HTTPS game server address above.", panel,
+        var demoButton = MakeButton("PLAY DEMO", panel, -615, new Color(0.16f, 0.42f, 0.28f), font);
+        var status = MakeText("Enter server URL. Demo mode needs no account.", panel,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 28), new Vector2(570, 54), 17, font);
         status.alignment = TextAnchor.MiddleCenter;
         status.color = Color.white;
@@ -72,6 +73,7 @@ public static class RagnarokAndroidBuildEntryPoint
         serialized.FindProperty("inviteCodeInput").objectReferenceValue = invite;
         serialized.FindProperty("loginButton").objectReferenceValue = loginButton;
         serialized.FindProperty("registerButton").objectReferenceValue = registerButton;
+        serialized.FindProperty("demoButton").objectReferenceValue = demoButton;
         serialized.FindProperty("statusText").objectReferenceValue = status;
         serialized.ApplyModifiedPropertiesWithoutUndo();
 
