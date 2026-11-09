@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
+using UnityEngine.EventSystems;\nusing System;
 
 public static class RagnarokAndroidBuildEntryPoint
 {
@@ -61,7 +61,7 @@ public static class RagnarokAndroidBuildEntryPoint
         var status = MakeText("Enter server URL. Demo mode needs no account.", panel,
             new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 28), new Vector2(570, 54), 17, font);
         status.alignment = TextAnchor.MiddleCenter;
-        status.color = Color.white;
+        status.color = Color.white;\n\n        var updateDetails = MakeText("", panel, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 120), new Vector2(570, 100), 16, font);\n        updateDetails.alignment = TextAnchor.MiddleCenter;\n        updateDetails.color = new Color(0.95f, 0.82f, 0.52f);\n        var updateButton = MakeButton("UPDATE GAME", panel, 205, new Color(0.12f, 0.48f, 0.30f), font);\n        updateButton.gameObject.SetActive(false);\n        var laterButton = MakeButton("LATER", panel, 145, new Color(0.25f, 0.28f, 0.32f), font);\n        laterButton.gameObject.SetActive(false);\n        var updater = auth.AddComponent<PrivateRagnarok.Client.AndroidUpdateController>();\n        updater.Initialize(status, updateDetails, updateButton, laterButton);
 
         var controller = auth.AddComponent<PrivateRagnarok.Client.LoginScreenController>();
         var serialized = new SerializedObject(controller);
