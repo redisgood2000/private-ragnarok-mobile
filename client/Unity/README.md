@@ -19,7 +19,7 @@ This is the first Unity client source drop, not a complete Unity project export 
 ## SignalR package
 The backend hub is `/hubs/world`. Add the Microsoft.AspNetCore.SignalR.Client NuGet package compatible with the Unity scripting runtime using NuGetForUnity (or a vetted Unity-compatible package workflow). Do not copy arbitrary DLLs from untrusted sources. The hub accepts the JWT as the `access_token` query parameter for WebSocket negotiation/connection.
 
-The initial client source implements authentication and a basic local third-person movement prototype. It deliberately does not pretend local movement is authoritative multiplayer. The next client iteration must add SignalR connection lifecycle, server snapshots, interpolation, map collision, and server-tick movement validation.
+The client source now includes authenticated SignalR connection lifecycle, online-player snapshots, join/leave events, server-authoritative movement input, remote-avatar interpolation, and a left-thumb mobile joystick. The server computes positions from normalized movement intent; the client does not submit world coordinates. Map collision, combat, inventory, character animation, token refresh, persistent world state, and multi-instance coordination are still outstanding.
 
 ## Security
 - Never ship the invite code or JWT signing key in the app.
@@ -29,3 +29,11 @@ The initial client source implements authentication and a basic local third-pers
 
 ## Procedural town scene
 See `docs/UNITY_WORLD_PROTOTYPE.md`. Copy the scripts into a Unity project, add an empty GameObject with `WorldBootstrap`, and press Play to generate the original low-poly town. This is a local visual prototype only; it is not yet connected to the multiplayer server.
+
+## Multiplayer world scripts
+- `WorldNetworkClient.cs` — connects to `/hubs/world` after login, sends movement intent at 10 Hz, and interpolates server snapshots.
+- `MobileMovementInput.cs` — left-side touch joystick. The right side is reserved for camera orbit/pinch.
+- `WorldCameraFollow.cs` — camera-relative movement and orbit controls.
+- `WorldBootstrap.cs` — creates the original low-poly test town and wires the local avatar/network components.
+
+The backend currently keeps online sessions and positions in process memory. Run a single API instance for multiplayer tests; restarting it clears presence, and multiple replicas will not share positions.
