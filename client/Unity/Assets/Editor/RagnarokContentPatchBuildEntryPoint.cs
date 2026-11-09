@@ -44,7 +44,7 @@ public static class RagnarokContentPatchBuildEntryPoint
         if (!hasWorldRoot)
             throw new InvalidOperationException("Add a prefab named exactly WorldRoot under Assets/RemoteContent before building a patch.");
 
-        var output = Path.GetFullPath(OutputRoot);
+        var output = Path.GetFullPath(Path.Combine(Application.dataPath, "..", OutputRoot));
         if (Directory.Exists(output)) Directory.Delete(output, true);
         Directory.CreateDirectory(output);
 
