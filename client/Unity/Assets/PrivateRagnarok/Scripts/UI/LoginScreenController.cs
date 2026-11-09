@@ -85,7 +85,14 @@ namespace PrivateRagnarok.Client
 
                 // Offline demo must not attempt a connection to the unconfigured API.
                 var network = FindObjectOfType<WorldNetworkClient>();
-                if (network != null) network.enabled = false;
+                if (network != null)
+                    network.enabled = false;
+
+                // WorldNetworkClient.Initialize marks the player as server-controlled.
+                // Offline demo must explicitly hand movement back to the local controller.
+                var localMovement = FindObjectOfType<ThirdPersonPrototypeController>();
+                if (localMovement != null)
+                    localMovement.NetworkControlled = false;
 
                 demoEntered = true;
                 Debug.Log(remoteWorldPrefab != null
