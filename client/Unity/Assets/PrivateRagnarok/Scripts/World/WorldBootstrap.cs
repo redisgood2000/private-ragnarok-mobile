@@ -162,6 +162,7 @@ namespace PrivateRagnarok.Client
             var follow = cameraObject.AddComponent<WorldCameraFollow>();
             follow.Initialize(player.transform);
             movement.CameraTransform = cameraObject.transform;
+            network.SetMovementCamera(cameraObject.transform);
         }
 
         private void BuildHudAnchor()
