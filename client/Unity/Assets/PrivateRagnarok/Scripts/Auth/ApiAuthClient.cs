@@ -33,6 +33,13 @@ namespace PrivateRagnarok.Client
         [SerializeField, Min(3)] private int timeoutSeconds = 15;
 
         public string ApiBaseUrl => apiBaseUrl;
+
+        public bool SetApiBaseUrl(string value)
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var parsed) || parsed.Scheme != Uri.UriSchemeHttps) return false;
+            apiBaseUrl = parsed.ToString().TrimEnd('/');
+            return true;
+        }
         public string AccessToken { get; private set; }
         public AuthResponse CurrentUser { get; private set; }
 
