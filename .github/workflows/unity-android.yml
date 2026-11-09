@@ -12,8 +12,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: unity-android-${{ github.ref }}
-  cancel-in-progress: true
+  group: private-ragnarok-publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-android:
