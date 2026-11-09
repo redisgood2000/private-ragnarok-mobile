@@ -26,10 +26,26 @@ jobs:
             exit 1
           fi
 
+      - name: Validate Android signing secrets
+        shell: bash
+        env:
+          KS_DATA: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          KS_ALIAS_PASS: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+        run: |
+          set -euo pipefail
+          for name in KS_DATA KS_PASS KS_ALIAS KS_ALIAS_PASS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required Android signing secret: ${name}"
+              exit 1
+            fi
+          done
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate Android signing secrets\n        shell: bash\n        env:\n          KS_DATA: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}\n          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}\n          KS_ALIAS: ${{ secrets.ANDROID_KEYALIAS_NAME }}\n          KS_ALIAS_PASS: ${{ secrets.ANDROID_KEYALIAS_PASS }}\n        run: |\n          set -euo pipefail\n          for name in KS_DATA KS_PASS KS_ALIAS KS_ALIAS_PASS; do\n            if [ -z "${!name}" ]; then\n              echo "::error::Missing required GitHub Actions secret for Android signing: ${name}"\n              exit 1\n            fi\n          done\n\n      - name: Set up .NET for NuGet restore
+      - name: Set up .NET for NuGet restore
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
@@ -68,11 +84,23 @@ jobs:
           buildMethod: RagnarokAndroidBuildEntryPoint.Build
           versioning: None
           allowDirtyBuild: true
+          androidKeystoreName: privateragnarok-release.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
 
-      - name: Verify APK output
+      - name: Verify APK signature and output
+        shell: bash
         run: |
-          test -s client/Unity/Build/PrivateRagnarok.apk
-          ls -lh client/Unity/Build/PrivateRagnarok.apk
+          set -euo pipefail
+          APK="client/Unity/Build/PrivateRagnarok.apk"
+          test -s "$APK"
+          ls -lh "$APK"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          test -n "$APKSIGNER"
+          "$APKSIGNER" verify --verbose "$APK"
+          "$APKSIGNER" verify --print-certs "$APK" | grep "Signer #1 certificate SHA-256 digest"
 
       - name: Publish versioned GitHub release
         uses: softprops/action-gh-release@v2
