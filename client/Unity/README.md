@@ -26,3 +26,6 @@ The initial client source implements authentication and a basic local third-pers
 - Invite code is entered by the invited player and sent over HTTPS.
 - Keep access tokens in memory for this prototype; implement refresh/revocation before production.
 - Do not enable cleartext HTTP for production Android builds.
+
+## Procedural town scene
+See `docs/UNITY_WORLD_PROTOTYPE.md`. Copy the scripts into a Unity project, add an empty GameObject with `WorldBootstrap`, and press Play to generate the original low-poly town. This is a local visual prototype only; it is not yet connected to the multiplayer server.
