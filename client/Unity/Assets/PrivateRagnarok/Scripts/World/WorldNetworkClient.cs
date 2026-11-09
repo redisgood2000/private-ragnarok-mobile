@@ -236,9 +236,9 @@ namespace PrivateRagnarok.Client
         [Serializable]
         private sealed class MoveInputRequest
         {
-            public float X;
-            public float Z;
-            public long Sequence;
+            public float X { get; set; }
+            public float Z { get; set; }
+            public long Sequence { get; set; }
         }
 
         [Serializable]
