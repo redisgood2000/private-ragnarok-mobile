@@ -17,6 +17,7 @@ namespace PrivateRagnarok.Client
         [Header("Actions")]
         [SerializeField] private Button loginButton;
         [SerializeField] private Button registerButton;
+        [SerializeField] private Button demoButton;
         [Header("Feedback")]
         [SerializeField] private TMP_Text statusText;
         [SerializeField] private GameObject loginPanel;
@@ -27,8 +28,17 @@ namespace PrivateRagnarok.Client
             if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
             loginButton.onClick.AddListener(Login);
             registerButton.onClick.AddListener(Register);
+            if (demoButton != null) demoButton.onClick.AddListener(EnterDemo);
             SetBusy(false);
             
+        }
+
+        private void EnterDemo()
+        {
+            if (!ApplyServerUrl()) return;
+            SetBusy(true);
+            var displayName = usernameInput != null ? usernameInput.text.Trim() : string.Empty;
+            StartCoroutine(authClient.StartDemo(displayName, OnAuthenticated, OnFailed));
         }
 
         private void Login()
@@ -105,7 +115,8 @@ namespace PrivateRagnarok.Client
         {
             loginButton.interactable = !busy;
             registerButton.interactable = !busy;
-            if (busy) Show("Connecting to the world...");
+            if (demoButton != null) demoButton.interactable = !busy;
+            if (busy) Show("Connecting to the game server...");
         }
 
         private void Show(string message)
@@ -117,6 +128,7 @@ namespace PrivateRagnarok.Client
         {
             if (loginButton != null) loginButton.onClick.RemoveListener(Login);
             if (registerButton != null) registerButton.onClick.RemoveListener(Register);
+            if (demoButton != null) demoButton.onClick.RemoveListener(EnterDemo);
             if (worldNetworkClient != null) worldNetworkClient.ConnectionStatusChanged -= OnWorldStatusChanged;
         }
     }
