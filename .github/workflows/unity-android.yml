@@ -149,6 +149,7 @@ jobs:
           retention-days: 14
 
       - name: Publish versioned GitHub release
+        id: publish_release
         uses: softprops/action-gh-release@v2
         continue-on-error: true
         with:
@@ -157,3 +158,28 @@ jobs:
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           files: client/Unity/Build/PrivateRagnarok.apk
+
+      - name: Update remote update manifest
+        if: steps.publish_release.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="0.1.${GITHUB_RUN_NUMBER}"
+          APK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/PrivateRagnarok.apk"
+          jq \
+            --arg version "$VERSION" \
+            --arg url "$APK_URL" \
+            '.latestVersion = $version | .apkUrl = $url' \
+            update/update.json > update/update.json.tmp
+          mv update/update.json.tmp update/update.json
+
+          CONTENT_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/contents/update/update.json" --jq .sha)"
+          CONTENT_B64="$(base64 -w0 update/update.json)"
+          gh api "repos/${GITHUB_REPOSITORY}/contents/update/update.json" \
+            -X PUT \
+            -f message="Publish Android update manifest for ${VERSION}" \
+            -f branch="main" \
+            -f sha="$CONTENT_SHA" \
+            -f content="$CONTENT_B64"
