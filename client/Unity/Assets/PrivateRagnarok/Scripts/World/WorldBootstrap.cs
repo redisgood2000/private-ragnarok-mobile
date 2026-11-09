@@ -163,8 +163,10 @@ namespace PrivateRagnarok.Client
             controller.height = 1.8f;
             controller.radius = 0.38f;
             controller.center = new Vector3(0f, 0.9f, 0f);
-            var movement = player.AddComponent<ThirdPersonPrototypeController>();
+            // Add the joystick before the movement controller: Unity invokes Awake
+            // immediately from AddComponent, so the reverse order leaves a null input ref.
             var touchInput = player.AddComponent<MobileMovementInput>();
+            var movement = player.AddComponent<ThirdPersonPrototypeController>();
             var network = player.AddComponent<WorldNetworkClient>();
             network.Initialize(player.transform, movement, touchInput);
 
