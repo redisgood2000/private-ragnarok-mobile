@@ -22,7 +22,7 @@ builder.Services.AddDbContext<GameDbContext>(o => o.UseNpgsql(dbConnection));
 builder.Services.AddScoped<IPasswordHasher<PlayerAccount>, PasswordHasher<PlayerAccount>>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddSignalR();
-builder.Services.AddHealthChecks().AddDbContextCheck<GameDbContext>();
+builder.Services.AddHealthChecks();
 builder.Services.AddCors(o => o.AddPolicy("UnityClient", p =>
     p.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
      .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
@@ -97,4 +97,4 @@ using (var scope = app.Services.CreateScope())
 }
 app.Run();
 
-public partial class Program;
+public partial class Program { }
