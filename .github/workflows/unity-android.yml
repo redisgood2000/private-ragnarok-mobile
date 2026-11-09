@@ -33,7 +33,8 @@ jobs:
         run: |
           dotnet tool install --global NuGetForUnity.Cli --version 4.5.0
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
-          dotnet nugetforunity restore client/Unity
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          nugetforunity restore client/Unity
 
       - name: Build Android APK
         uses: game-ci/unity-builder@v4
