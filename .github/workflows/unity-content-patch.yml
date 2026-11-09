@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "client/Unity/Assets/RemoteContent/**/*.prefab"
+      - "client/Unity/Assets/RemoteContent/**"
 
 permissions:
   contents: write
