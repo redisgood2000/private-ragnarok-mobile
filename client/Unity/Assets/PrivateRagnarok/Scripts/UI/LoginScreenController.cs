@@ -8,6 +8,7 @@ namespace PrivateRagnarok.Client
     {
         [Header("Dependencies")]
         [SerializeField] private ApiAuthClient authClient;
+        [SerializeField] private WorldNetworkClient worldNetworkClient;
         [Header("Inputs")]
         [SerializeField] private TMP_InputField usernameInput;
         [SerializeField] private TMP_InputField passwordInput;
@@ -22,6 +23,7 @@ namespace PrivateRagnarok.Client
         private void Awake()
         {
             if (authClient == null) authClient = GetComponent<ApiAuthClient>();
+            if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
             loginButton.onClick.AddListener(Login);
             registerButton.onClick.AddListener(Register);
             SetBusy(false);
@@ -70,6 +72,10 @@ namespace PrivateRagnarok.Client
             SetBusy(false);
             Show("Welcome, " + response.username + "!");
             if (authenticatedPanel != null) authenticatedPanel.SetActive(true);
+            if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
+            if (worldNetworkClient != null && authClient != null)
+                worldNetworkClient.ConfigureAndConnect(authClient.AccessToken, response.playerId,
+                    response.username, authClient.ApiBaseUrl);
         }
 
         private void OnFailed(string message)
