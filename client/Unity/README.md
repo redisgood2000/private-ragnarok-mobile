@@ -24,7 +24,7 @@ Enter the public HTTPS API base URL in the login screen before logging in. The b
 ## Build APK locally
 Run the editor build method `PrivateRagnarok.Editor.AndroidBuildBootstrap.Build`. Output: `Build/PrivateRagnarok.apk`.
 
-## GitHub Actions APK build
+See [`docs/UNITY_ANDROID_BUILD.md`](../../docs/UNITY_ANDROID_BUILD.md) for the one-time Unity license activation and exact GitHub Actions steps.\n\n## GitHub Actions APK build
 The workflow `.github/workflows/unity-android.yml` is manual, restores NuGet dependencies in CI, and requires a valid Unity license file in repository secret `UNITY_LICENSE`. Add `UNITY_EMAIL` and `UNITY_PASSWORD` only if required by your license activation method. Then run **Actions → Unity Android APK → Run workflow**. The APK is uploaded as the `Private-Ragnarok-Android-APK` artifact.
 
 ## Important limitations
