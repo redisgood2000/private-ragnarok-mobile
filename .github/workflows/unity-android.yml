@@ -1,0 +1,48 @@
+name: Unity Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "client/Unity/**"
+      - ".github/workflows/unity-android.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    name: Build Unity Android ARM64 APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Unity license secret
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.UNITY_LICENSE }}" ]; then
+            echo "::error::Add the UNITY_LICENSE repository secret before running this workflow."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Android APK
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: client/Unity
+          targetPlatform: Android
+          buildMethod: PrivateRagnarok.Editor.AndroidBuildBootstrap.Build
+          versioning: Semantic
+          androidAppBundle: false
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Private-Ragnarok-Android-APK
+          path: client/Unity/Build/PrivateRagnarok.apk
+          if-no-files-found: error
+          retention-days: 14
