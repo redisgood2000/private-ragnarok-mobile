@@ -37,53 +37,43 @@ public static class RagnarokAndroidBuildEntryPoint
         scaler.referenceResolution = new Vector2(1920, 1080);
 
         var panel = Rect("LoginPanel", canvasObject.transform, new Vector2(0.5f, 0.5f),
-            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(620, 760));
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 760));
         panel.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.055f, 0.085f, 0.94f);
 
         var heading = MakeText("PRIVATE RAGNAROK", panel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0, -65), new Vector2(560, 70), 42, font);
+            new Vector2(0, -105), new Vector2(680, 100), 52, font);
         heading.alignment = TextAnchor.MiddleCenter;
         heading.color = new Color(0.95f, 0.78f, 0.38f);
 
-        var subtitle = MakeText("Enter the world with your party", panel, new Vector2(0.5f, 1f),
-            new Vector2(0.5f, 1f), new Vector2(0, -120), new Vector2(560, 42), 22, font);
-        subtitle.alignment = TextAnchor.MiddleCenter;
-        subtitle.color = Color.white;
+        var demoButton = MakeButton("PLAY DEMO", panel, -340, new Color(0.16f, 0.42f, 0.28f), font);
+        demoButton.GetComponent<RectTransform>().sizeDelta = new Vector2(520, 112);
+        var demoLabel = demoButton.GetComponentInChildren<Text>();
+        demoLabel.fontSize = 36;
 
-        var serverUrl = MakeInput("Game server HTTPS URL", panel, -170, font);
-        var username = MakeInput("Username", panel, -245, font);
-        var password = MakeInput("Password (12+ characters)", panel, -320, font);
-        password.contentType = InputField.ContentType.Password;
-        var invite = MakeInput("Invite code (registration only)", panel, -395, font);
-
-        var loginButton = MakeButton("LOGIN", panel, -475, new Color(0.16f, 0.36f, 0.57f), font);
-        var registerButton = MakeButton("REGISTER", panel, -545, new Color(0.34f, 0.25f, 0.12f), font);
-        var demoButton = MakeButton("PLAY DEMO", panel, -615, new Color(0.16f, 0.42f, 0.28f), font);
-        var status = MakeText("Enter server URL. Demo mode needs no account.", panel,
-            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 28), new Vector2(570, 54), 17, font);
+        var status = MakeText("Tap PLAY DEMO to enter the world", panel,
+            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 35),
+            new Vector2(680, 58), 19, font);
         status.alignment = TextAnchor.MiddleCenter;
         status.color = Color.white;
 
-        var updateDetails = MakeText("", panel, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 120), new Vector2(570, 100), 16, font);
+        // Update controls are hidden unless a newer signed APK is published.
+        // They are kept separate from the normal one-button demo menu.
+        var updateDetails = MakeText("", panel, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+            new Vector2(0, 155), new Vector2(650, 100), 16, font);
         updateDetails.alignment = TextAnchor.MiddleCenter;
         updateDetails.color = new Color(0.95f, 0.82f, 0.52f);
-        var updateButton = MakeButton("UPDATE GAME", panel, 205, new Color(0.12f, 0.48f, 0.30f), font);
+        var updateButton = MakeButton("UPDATE GAME", panel, -465, new Color(0.12f, 0.48f, 0.30f), font);
         updateButton.gameObject.SetActive(false);
-        var laterButton = MakeButton("LATER", panel, 145, new Color(0.25f, 0.28f, 0.32f), font);
+        var laterButton = MakeButton("LATER", panel, -535, new Color(0.25f, 0.28f, 0.32f), font);
         laterButton.gameObject.SetActive(false);
-        var updater = auth.AddComponent<PrivateRagnarok.Client.AndroidUpdateController>();
+
+        var appServices = new GameObject("AppServices");
+        var updater = appServices.AddComponent<PrivateRagnarok.Client.AndroidUpdateController>();
         updater.Initialize(status, updateDetails, updateButton, laterButton);
 
-        var controller = auth.AddComponent<PrivateRagnarok.Client.LoginScreenController>();
+        var controller = appServices.AddComponent<PrivateRagnarok.Client.LoginScreenController>();
         var serialized = new SerializedObject(controller);
-        serialized.FindProperty("authClient").objectReferenceValue = authClient;
         serialized.FindProperty("loginPanel").objectReferenceValue = panel.gameObject;
-        serialized.FindProperty("serverUrlInput").objectReferenceValue = serverUrl;
-        serialized.FindProperty("usernameInput").objectReferenceValue = username;
-        serialized.FindProperty("passwordInput").objectReferenceValue = password;
-        serialized.FindProperty("inviteCodeInput").objectReferenceValue = invite;
-        serialized.FindProperty("loginButton").objectReferenceValue = loginButton;
-        serialized.FindProperty("registerButton").objectReferenceValue = registerButton;
         serialized.FindProperty("demoButton").objectReferenceValue = demoButton;
         serialized.FindProperty("statusText").objectReferenceValue = status;
         serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -100,8 +90,11 @@ public static class RagnarokAndroidBuildEntryPoint
         PlayerSettings.productName = "Private Ragnarok";
         PlayerSettings.companyName = "PrivateRagnarok";
         PlayerSettings.applicationIdentifier = "com.privateragnarok.mobile";
-        PlayerSettings.bundleVersion = "0.1.0";
-        PlayerSettings.Android.bundleVersionCode = 1;
+        var runNumberText = Environment.GetEnvironmentVariable("GITHUB_RUN_NUMBER");
+        if (!int.TryParse(runNumberText, out var buildNumber) || buildNumber < 1)
+            throw new Exception("GITHUB_RUN_NUMBER is missing or invalid; refusing to build a non-upgradable APK.");
+        PlayerSettings.bundleVersion = "0.1." + buildNumber;
+        PlayerSettings.Android.bundleVersionCode = buildNumber;
 
         // GameCI supplies these values to the Unity process, but this custom
         // BuildPlayer entry point must explicitly apply them to PlayerSettings.
