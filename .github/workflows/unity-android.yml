@@ -29,10 +29,7 @@ jobs:
       - name: Cache Unity NuGet packages
         uses: actions/cache@v4
         with:
-          path: |
-            client/Unity/Assets/Packages
-            client/Unity/Assets/NuGet.config
-            ~/.nuget/packages
+          path: ~/.nuget/packages
           key: ${{ runner.os }}-unity-nuget-${{ hashFiles('client/Unity/Assets/packages.config') }}
           restore-keys: |
             ${{ runner.os }}-unity-nuget-
@@ -85,23 +82,11 @@ jobs:
           versioning: Semantic
           allowDirtyBuild: true
 
-      # Save caches even when Unity compilation fails, so the next run can
-      # reuse completed imports and restored NuGet assemblies while we fix errors.
-      - name: Save Unity Library cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: client/Unity/Library
-          key: ${{ runner.os }}-unity-library-${{ hashFiles('client/Unity/ProjectSettings/ProjectVersion.txt', 'client/Unity/Packages/manifest.json', 'client/Unity/Assets/packages.config') }}
-
       - name: Save Unity NuGet cache
         if: always()
         uses: actions/cache/save@v4
         with:
-          path: |
-            client/Unity/Assets/Packages
-            client/Unity/Assets/NuGet.config
-            ~/.nuget/packages
+          path: ~/.nuget/packages
           key: ${{ runner.os }}-unity-nuget-${{ hashFiles('client/Unity/Assets/packages.config') }}
 
       - name: Upload APK
