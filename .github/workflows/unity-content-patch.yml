@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: unity-content-patch-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-publish-patch:
     name: Build and publish remote Android content
