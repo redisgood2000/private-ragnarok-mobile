@@ -102,6 +102,36 @@ public static class RagnarokAndroidBuildEntryPoint
         PlayerSettings.applicationIdentifier = "com.privateragnarok.mobile";
         PlayerSettings.bundleVersion = "0.1.0";
         PlayerSettings.Android.bundleVersionCode = 1;
+
+        // GameCI supplies these values to the Unity process, but this custom
+        // BuildPlayer entry point must explicitly apply them to PlayerSettings.
+        // Otherwise Unity silently falls back to its debug signing certificate.
+        var keystoreFile = Environment.GetEnvironmentVariable("ANDROID_KEYSTORE_NAME");
+        var keystorePassword = Environment.GetEnvironmentVariable("ANDROID_KEYSTORE_PASS");
+        var keyAlias = Environment.GetEnvironmentVariable("ANDROID_KEYALIAS_NAME");
+        var keyAliasPassword = Environment.GetEnvironmentVariable("ANDROID_KEYALIAS_PASS");
+        if (string.IsNullOrWhiteSpace(keystoreFile) ||
+            string.IsNullOrWhiteSpace(keystorePassword) ||
+            string.IsNullOrWhiteSpace(keyAlias) ||
+            string.IsNullOrWhiteSpace(keyAliasPassword))
+            throw new Exception("Release signing configuration is incomplete.");
+
+        var keystoreCandidates = new[]
+        {
+            Path.GetFullPath(keystoreFile),
+            Path.GetFullPath(Path.Combine("client/Unity", keystoreFile)),
+            Path.GetFullPath(Path.Combine("..", "..", keystoreFile))
+        };
+        var resolvedKeystore = Array.Find(keystoreCandidates, File.Exists);
+        if (string.IsNullOrEmpty(resolvedKeystore))
+            throw new FileNotFoundException("Configured Android release keystore was not found.", keystoreFile);
+
+        PlayerSettings.Android.useCustomKeystore = true;
+        PlayerSettings.Android.keystoreName = resolvedKeystore;
+        PlayerSettings.Android.keystorePass = keystorePassword;
+        PlayerSettings.Android.keyaliasName = keyAlias;
+        PlayerSettings.Android.keyaliasPass = keyAliasPassword;
+
         PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
         PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
         PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
