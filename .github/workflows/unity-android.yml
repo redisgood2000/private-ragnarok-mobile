@@ -113,7 +113,12 @@ jobs:
           printf '%s\n' "$VERIFY_OUTPUT" | grep -Fq "Verified using v1 scheme (JAR signing): true"
           printf '%s\n' "$VERIFY_OUTPUT" | grep -Fq "Verified using v2 scheme (APK Signature Scheme v2): true"
           printf '%s\n' "$VERIFY_OUTPUT" | grep -Eq "^Number of signers: 1$"
-          printf '%s\n' "$VERIFY_OUTPUT" | grep -Eq "^Signer #1 certificate SHA-256 digest: [[:xdigit:]]{64}$"
+          printf '%s\\n' "$VERIFY_OUTPUT" | grep -Eq "^V2 Signer: certificate SHA-256 digest: [[:xdigit:]]{64}$"
+          printf '%s\\n' "$VERIFY_OUTPUT" | grep -Fq "CN=redisgood"
+          if printf '%s\\n' "$VERIFY_OUTPUT" | grep -Fq "CN=Android Debug"; then
+            echo "::error::APK is signed with the Android debug certificate, not the configured release key."
+            exit 1
+          fi
 
           if [ "$VERIFY_STATUS" -ne 0 ]; then
             WARNING_COUNT="$(printf '%s\n' "$VERIFY_OUTPUT" | grep -c '^WARNING: META-INF/' || true)"
