@@ -17,8 +17,17 @@ public static class RagnarokContentPatchBuildEntryPoint
     public static void BuildAndroidPatch()
     {
         if (!Directory.Exists(ContentRoot))
-            throw new DirectoryNotFoundException("Create Assets/RemoteContent and add patchable assets before building a content patch.");
+            Directory.CreateDirectory(ContentRoot);
 
+        // The town is generated procedurally by the client. Bake that same original
+        // environment into a prefab automatically so a patch can be published even
+        // before custom art assets are added to Assets/RemoteContent.
+        var worldRootPath = ContentRoot + "/WorldRoot.prefab";
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(worldRootPath) == null)
+            GenerateWorldRootPrefab(worldRootPath);
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
         var assetPaths = AssetDatabase.GetAllAssetPaths();
         var bundleAssets = new System.Collections.Generic.List<string>();
         var hasWorldRoot = false;
@@ -72,6 +81,33 @@ public static class RagnarokContentPatchBuildEntryPoint
         File.WriteAllText(Path.Combine(output, "patch-sha256.txt"), hash + Environment.NewLine);
         File.WriteAllText(Path.Combine(output, "patch-bundle-name.txt"), BundleName + Environment.NewLine);
         Debug.Log("Android content patch built: " + bundlePath + " SHA256=" + hash);
+    }
+
+    private static void GenerateWorldRootPrefab(string prefabPath)
+    {
+        var shader = AssetDatabase.LoadAssetAtPath<Shader>(
+            "Assets/Resources/PrivateRagnarok/World.shader");
+        if (shader == null)
+            throw new InvalidOperationException("The original world shader is missing.");
+
+        var root = new GameObject("WorldRoot");
+        try
+        {
+            var bootstrap = root.AddComponent<PrivateRagnarok.Client.WorldBootstrap>();
+            var serialized = new SerializedObject(bootstrap);
+            serialized.FindProperty("worldShader").objectReferenceValue = shader;
+            serialized.FindProperty("buildOnStart").boolValue = false;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            bootstrap.BuildEnvironmentForContentPatch();
+            UnityEngine.Object.DestroyImmediate(bootstrap);
+            PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            Debug.Log("Generated remote WorldRoot prefab: " + prefabPath);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
     }
 
     private static string ComputeSha256(string path)
