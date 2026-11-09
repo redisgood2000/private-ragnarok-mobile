@@ -122,6 +122,14 @@ namespace PrivateRagnarok.Client
             completed?.Invoke(prefab);
         }
 
+        /// <summary>Loads any asset included in the currently active remote content bundle.</summary>
+        public T LoadAsset<T>(string assetName) where T : UnityEngine.Object
+        {
+            return loadedBundle == null || string.IsNullOrWhiteSpace(assetName)
+                ? null
+                : loadedBundle.LoadAsset<T>(assetName);
+        }
+
         private static bool IsValidManifest(RemoteContentManifest manifest)
         {
             Uri uri;
