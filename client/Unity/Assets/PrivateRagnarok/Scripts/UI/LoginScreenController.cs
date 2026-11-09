@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,35 +9,37 @@ namespace PrivateRagnarok.Client
         [SerializeField] private ApiAuthClient authClient;
         [SerializeField] private WorldNetworkClient worldNetworkClient;
         [Header("Inputs")]
-        [SerializeField] private TMP_InputField serverUrlInput;
-        [SerializeField] private TMP_InputField usernameInput;
-        [SerializeField] private TMP_InputField passwordInput;
-        [SerializeField] private TMP_InputField inviteCodeInput;
+        [SerializeField] private InputField serverUrlInput;
+        [SerializeField] private InputField usernameInput;
+        [SerializeField] private InputField passwordInput;
+        [SerializeField] private InputField inviteCodeInput;
         [Header("Actions")]
         [SerializeField] private Button loginButton;
         [SerializeField] private Button registerButton;
         [SerializeField] private Button demoButton;
         [Header("Feedback")]
-        [SerializeField] private TMP_Text statusText;
+        [SerializeField] private Text statusText;
         [SerializeField] private GameObject loginPanel;
 
         private void Awake()
         {
             if (authClient == null) authClient = GetComponent<ApiAuthClient>();
             if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
-            loginButton.onClick.AddListener(Login);
-            registerButton.onClick.AddListener(Register);
+            if (loginButton != null) loginButton.onClick.AddListener(Login);
+            if (registerButton != null) registerButton.onClick.AddListener(Register);
             if (demoButton != null) demoButton.onClick.AddListener(EnterDemo);
             SetBusy(false);
             
         }
 
+        // Offline prototype mode: no backend or server URL is required.
+        // The local WorldBootstrap already creates the town, player and camera.
         private void EnterDemo()
         {
-            if (!ApplyServerUrl()) return;
-            SetBusy(true);
-            var displayName = usernameInput != null ? usernameInput.text.Trim() : string.Empty;
-            StartCoroutine(authClient.StartDemo(displayName, OnAuthenticated, OnFailed));
+            if (loginPanel != null) loginPanel.SetActive(false);
+            if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
+            if (worldNetworkClient != null) worldNetworkClient.enabled = false;
+            Debug.Log("Entered Private Ragnarok offline demo.");
         }
 
         private void Login()
@@ -113,8 +114,8 @@ namespace PrivateRagnarok.Client
 
         private void SetBusy(bool busy)
         {
-            loginButton.interactable = !busy;
-            registerButton.interactable = !busy;
+            if (loginButton != null) loginButton.interactable = !busy;
+            if (registerButton != null) registerButton.interactable = !busy;
             if (demoButton != null) demoButton.interactable = !busy;
             if (busy) Show("Connecting to the game server...");
         }
