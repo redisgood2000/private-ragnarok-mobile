@@ -91,7 +91,8 @@ public sealed class WorldHub : Hub
         if (!string.IsNullOrWhiteSpace(playerId) &&
             Online.TryGetValue(playerId, out var session) &&
             session.ConnectionId == Context.ConnectionId &&
-            Online.TryRemove(new KeyValuePair<string, PlayerSession>(playerId, session)))
+            ((ICollection<KeyValuePair<string, PlayerSession>>)Online).Remove(
+                new KeyValuePair<string, PlayerSession>(playerId, session)))
         {
             await Clients.Others.SendAsync("PlayerLeft", playerId);
         }
