@@ -101,7 +101,12 @@ public sealed class WorldHub : Hub
 
     private const float MathfRadiansToDegrees = 57.2957795f;
 
-    public sealed record MoveInputRequest(float X, float Z, long Sequence);
+    public sealed class MoveInputRequest
+    {
+        public float X { get; init; }
+        public float Z { get; init; }
+        public long Sequence { get; init; }
+    }
 
     public sealed class PlayerSnapshot
     {
