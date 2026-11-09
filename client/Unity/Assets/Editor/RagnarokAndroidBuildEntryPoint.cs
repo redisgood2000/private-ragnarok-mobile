@@ -56,20 +56,32 @@ public static class RagnarokAndroidBuildEntryPoint
         status.alignment = TextAnchor.MiddleCenter;
         status.color = Color.white;
 
-        // Update controls are hidden unless a newer signed APK is published.
-        // They are kept separate from the normal one-button demo menu.
-        var updateDetails = MakeText("", panel, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(0, 155), new Vector2(650, 100), 16, font);
+        // Modal update prompt: the updater displays it only after finding a newer APK.
+        var prompt = Rect("UpdatePrompt", canvasObject.transform, new Vector2(0.5f, 0.5f),
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 560));
+        prompt.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.055f, 0.085f, 0.98f);
+        var promptHeading = MakeText("GAME UPDATE AVAILABLE", prompt,
+            new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -70),
+            new Vector2(680, 80), 34, font);
+        promptHeading.alignment = TextAnchor.MiddleCenter;
+        promptHeading.color = new Color(0.95f, 0.78f, 0.38f);
+        var updateDetails = MakeText("", prompt, new Vector2(0.5f, 0.5f),
+            new Vector2(0.5f, 0.5f), new Vector2(0, 45), new Vector2(660, 220), 18, font);
         updateDetails.alignment = TextAnchor.MiddleCenter;
-        updateDetails.color = new Color(0.95f, 0.82f, 0.52f);
-        var updateButton = MakeButton("UPDATE GAME", panel, -465, new Color(0.12f, 0.48f, 0.30f), font);
-        updateButton.gameObject.SetActive(false);
-        var laterButton = MakeButton("LATER", panel, -535, new Color(0.25f, 0.28f, 0.32f), font);
-        laterButton.gameObject.SetActive(false);
+        updateDetails.color = Color.white;
+        var updateButton = MakeButton("YES - UPDATE NOW", prompt, -360,
+            new Color(0.12f, 0.48f, 0.30f), font);
+        updateButton.GetComponent<RectTransform>().sizeDelta = new Vector2(520, 82);
+        updateButton.GetComponentInChildren<Text>().fontSize = 27;
+        var laterButton = MakeButton("NO - LATER", prompt, -460,
+            new Color(0.25f, 0.28f, 0.32f), font);
+        laterButton.GetComponent<RectTransform>().sizeDelta = new Vector2(520, 72);
+        laterButton.GetComponentInChildren<Text>().fontSize = 25;
+        prompt.gameObject.SetActive(false);
 
         var appServices = new GameObject("AppServices");
         var updater = appServices.AddComponent<PrivateRagnarok.Client.AndroidUpdateController>();
-        updater.Initialize(status, updateDetails, updateButton, laterButton);
+        updater.Initialize(status, updateDetails, updateButton, laterButton, prompt.gameObject);
 
         var controller = appServices.AddComponent<PrivateRagnarok.Client.LoginScreenController>();
         var serialized = new SerializedObject(controller);
