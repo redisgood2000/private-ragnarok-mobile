@@ -126,7 +126,7 @@ public sealed class WorldHub : Hub
         public string PlayerId { get; } = playerId;
         public string Username { get; } = username;
         public float X = x;
-        public float Y;
+        public float Y = 0f;
         public float Z = z;
         public float Yaw;
         public long LastSequence;
