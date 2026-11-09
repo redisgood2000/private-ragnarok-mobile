@@ -110,6 +110,9 @@ jobs:
           BUNDLE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/content-v1/worldcontent"
           PATCH_VERSION="1.0.${GITHUB_RUN_NUMBER}"
 
+          REMOTE_MANIFEST="$(gh api "repos/${GITHUB_REPOSITORY}/contents/update/update.json")"
+          CONTENT_SHA="$(printf '%s' "$REMOTE_MANIFEST" | jq -r .sha)"
+          printf '%s' "$REMOTE_MANIFEST" | jq -r .content | tr -d '\n' | base64 -d > update/update.json
           jq \
             --arg version "$PATCH_VERSION" \
             --arg url "$BUNDLE_URL" \
@@ -123,7 +126,6 @@ jobs:
             update/update.json > update/update.json.tmp
           mv update/update.json.tmp update/update.json
 
-          CONTENT_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/contents/update/update.json" --jq .sha)"
           CONTENT_B64="$(base64 -w0 update/update.json)"
           gh api "repos/${GITHUB_REPOSITORY}/contents/update/update.json" \
             -X PUT \
