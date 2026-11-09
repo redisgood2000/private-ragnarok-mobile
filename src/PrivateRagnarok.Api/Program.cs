@@ -94,6 +94,23 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<GameDbContext>();
     await db.Database.EnsureCreatedAsync();
+
+    // EnsureCreated does not evolve an existing database. Create the additive character
+    // table explicitly so deployed installations made by earlier builds can upgrade safely.
+    await db.Database.ExecuteSqlRawAsync("""
+        CREATE TABLE IF NOT EXISTS "PlayerCharacters" (
+            "PlayerId" uuid PRIMARY KEY REFERENCES "Players" ("Id") ON DELETE CASCADE,
+            "CharacterName" character varying(24) NOT NULL,
+            "JobClass" character varying(24) NOT NULL DEFAULT 'Novice',
+            "Level" integer NOT NULL DEFAULT 1 CHECK ("Level" BETWEEN 1 AND 99),
+            "BaseExperience" bigint NOT NULL DEFAULT 0 CHECK ("BaseExperience" >= 0),
+            "X" real NOT NULL DEFAULT 0,
+            "Y" real NOT NULL DEFAULT 0,
+            "Z" real NOT NULL DEFAULT -7,
+            "Yaw" real NOT NULL DEFAULT 0,
+            "UpdatedAt" timestamp with time zone NOT NULL
+        );
+        """);
 }
 app.Run();
 
