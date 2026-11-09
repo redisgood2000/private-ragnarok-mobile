@@ -70,7 +70,7 @@ jobs:
           targetPlatform: Android
           androidExportType: androidPackage
           androidTargetSdkVersion: 35
-          buildMethod: PrivateRagnarok.Editor.AndroidBuildBootstrap.Build
+          buildMethod: RagnarokAndroidBuildEntryPoint.Build
           versioning: Semantic
           allowDirtyBuild: true
 
