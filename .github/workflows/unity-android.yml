@@ -24,6 +24,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Restore Unity's generated import database between runs. The cache key changes
+      # when the Unity editor version or package/dependency manifests change.
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: client/Unity/Library
+          key: ${{ runner.os }}-unity-library-${{ hashFiles('client/Unity/ProjectSettings/ProjectVersion.txt', 'client/Unity/Packages/manifest.json', 'client/Unity/Assets/packages.config') }}
+          restore-keys: |
+            ${{ runner.os }}-unity-library-
+
+      # NuGetForUnity writes restored DLLs into Assets/Packages. Cache those too,
+      # otherwise Unity cannot reuse the previous dependency import state.
+      - name: Cache Unity NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            client/Unity/Assets/Packages
+            client/Unity/Assets/NuGet.config
+            ~/.nuget/packages
+          key: ${{ runner.os }}-unity-nuget-${{ hashFiles('client/Unity/Assets/packages.config') }}
+          restore-keys: |
+            ${{ runner.os }}-unity-nuget-
+
       - name: Set up .NET for NuGet restore
         uses: actions/setup-dotnet@v4
         with:
