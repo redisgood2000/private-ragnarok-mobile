@@ -6,6 +6,23 @@ using PrivateRagnarok.Api.Models;
 namespace PrivateRagnarok.Api.Services;
 public sealed class TokenService(IConfiguration config)
 {
+    public string CreateGuest(Guid guestId, string displayName)
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Auth:JwtKey"]!));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var claims = new[] {
+            new Claim(ClaimTypes.NameIdentifier, guestId.ToString()),
+            new Claim(ClaimTypes.Name, displayName),
+            new Claim("demo", "true"),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+        var token = new JwtSecurityToken(
+            issuer: config["Auth:Issuer"] ?? "PrivateRagnarok",
+            audience: config["Auth:Audience"] ?? "PrivateRagnarokClient",
+            claims: claims, expires: DateTime.UtcNow.AddHours(2), signingCredentials: credentials);
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
     public string Create(PlayerAccount player)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Auth:JwtKey"]!));
