@@ -97,6 +97,11 @@ public static class RagnarokAndroidBuildEntryPoint
     {
         GenerateScene();
         EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
+        // This project uses UnityEngine.Input (Input.touchCount/Input.touches) and
+        // uGUI StandaloneInputModule. Do not depend on an editor/default setting:
+        // explicitly select the legacy Input Manager for Android touch input.
+        PlayerSettings.activeInputHandler = ActiveInputHandling.InputManager;
+        Debug.Log("Android active input handler: " + PlayerSettings.activeInputHandler);
         PlayerSettings.productName = "Private Ragnarok";
         PlayerSettings.companyName = "PrivateRagnarok";
         PlayerSettings.applicationIdentifier = "com.privateragnarok.mobile";
