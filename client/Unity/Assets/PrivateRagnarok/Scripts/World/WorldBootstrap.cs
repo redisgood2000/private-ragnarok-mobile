@@ -12,6 +12,8 @@ namespace PrivateRagnarok.Client
         [SerializeField] private bool buildOnStart = true;
         [SerializeField] private Vector3 playerSpawn = new Vector3(0f, 0.15f, -7f);
         [SerializeField] private string prototypePlayerName = "Adventurer";
+        // Assigned by the editor scene generator as a direct serialized asset reference.
+        [SerializeField] private Shader worldShader;
 
         private Material groundMat, pathMat, wallMat, roofMat, woodMat, stoneMat, accentMat, playerMat;
 
@@ -45,20 +47,16 @@ namespace PrivateRagnarok.Client
             playerMat = MakeMaterial("Player tunic", new Color(0.18f, 0.42f, 0.68f));
         }
 
-        private static Material MakeMaterial(string materialName, Color color)
+        private Material MakeMaterial(string materialName, Color color)
         {
-            // Load the custom shader from Resources so Unity cannot strip it
-            // merely because its name is resolved dynamically at runtime.
-            var shader = Resources.Load<Shader>("PrivateRagnarok/World");
+            // A direct scene reference avoids runtime name lookup and shader stripping.
+            var shader = worldShader;
             if (shader == null)
-                shader = Shader.Find("Universal Render Pipeline/Lit") ??
-                         Shader.Find("Standard") ??
-                         Shader.Find("Unlit/Color");
+                shader = Resources.Load<Shader>("PrivateRagnarok/World");
             if (shader == null)
                 throw new System.InvalidOperationException(
-                    "No supported world shader is available. Expected Resources/PrivateRagnarok/World.shader.");
-            var material = new Material(shader) { name = materialName, color = color };
-            return material;
+                    "World shader reference is missing. Rebuild the startup scene so WorldBootstrap.worldShader references Assets/Resources/PrivateRagnarok/World.shader.");
+            return new Material(shader) { name = materialName, color = color };
         }
 
         private void BuildGroundAndPaths()
