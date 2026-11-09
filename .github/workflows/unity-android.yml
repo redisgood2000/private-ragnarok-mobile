@@ -24,8 +24,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # NuGetForUnity writes restored DLLs into Assets/Packages. Cache those too,
-      # otherwise Unity cannot reuse the previous dependency import state.
+      # Cache only the global NuGet download cache. Unity's Assets/Packages
+      # must be recreated from packages.config on every clean checkout.
       - name: Cache Unity NuGet packages
         uses: actions/cache@v4
         with:
@@ -54,13 +54,23 @@ jobs:
           find client/Unity/Assets/Packages -type f -name '*.dll' -print | sort
           for assembly in \
             Microsoft.AspNetCore.Connections.Abstractions \
-            Microsoft.Extensions.Options \
+            Microsoft.Bcl.TimeProvider \
+            Microsoft.Bcl.AsyncInterfaces \
+            Microsoft.Extensions.Features \
+            Microsoft.Extensions.DependencyInjection \
             Microsoft.Extensions.DependencyInjection.Abstractions \
+            Microsoft.Extensions.Logging \
             Microsoft.Extensions.Logging.Abstractions \
+            Microsoft.Extensions.Options \
+            Microsoft.Extensions.Primitives \
+            System.Buffers \
+            System.Diagnostics.DiagnosticSource \
+            System.IO.Pipelines \
+            System.Memory \
             System.Text.Json \
             System.Text.Encodings.Web \
-            System.IO.Pipelines \
-            System.Threading.Channels; do
+            System.Threading.Channels \
+            System.Threading.Tasks.Extensions; do
             if ! find client/Unity/Assets/Packages -type f -name "${assembly}.dll" -print -quit | grep -q .; then
               echo "::error::NuGet restore did not produce ${assembly}.dll"
               exit 1
