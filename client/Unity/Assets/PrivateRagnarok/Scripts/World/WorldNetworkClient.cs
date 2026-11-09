@@ -238,7 +238,7 @@ namespace PrivateRagnarok.Client
         }
 
         [Serializable]
-        private sealed class MoveInputRequest
+        public sealed class MoveInputRequest
         {
             public float X { get; set; }
             public float Z { get; set; }
