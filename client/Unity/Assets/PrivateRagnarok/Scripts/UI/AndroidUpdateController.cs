@@ -29,15 +29,17 @@ namespace PrivateRagnarok.Client
         [SerializeField] private Text updateDetailsText;
         [SerializeField] private Button updateButton;
         [SerializeField] private Button laterButton;
+        [SerializeField] private GameObject updatePromptPanel;
         private string downloadUrl;
         private string latestVersion;
         private bool checking;
         private bool downloading;
 
-        public void Initialize(Text status, Text details, Button update, Button later)
+        public void Initialize(Text status, Text details, Button update, Button later, GameObject promptPanel)
         {
             statusText = status; updateDetailsText = details;
-            updateButton = update; laterButton = later;
+            updateButton = update; laterButton = later; updatePromptPanel = promptPanel;
+            if (updatePromptPanel != null) updatePromptPanel.SetActive(false);
             if (updateButton != null) updateButton.onClick.AddListener(DownloadAndInstall);
             if (laterButton != null) laterButton.onClick.AddListener(HidePrompt);
             if (updateButton != null) updateButton.gameObject.SetActive(false);
@@ -92,6 +94,7 @@ namespace PrivateRagnarok.Client
                         (string.IsNullOrWhiteSpace(release.body) ? "Bug fixes and improvements." : release.body);
                 if (updateButton != null) updateButton.gameObject.SetActive(true);
                 if (laterButton != null) laterButton.gameObject.SetActive(true);
+                if (updatePromptPanel != null) updatePromptPanel.SetActive(true);
                 SetStatus("A game update is available.");
             }
             checking = false;
@@ -217,6 +220,7 @@ namespace PrivateRagnarok.Client
 
         private void HidePrompt()
         {
+            if (updatePromptPanel != null) updatePromptPanel.SetActive(false);
             if (updateButton != null) updateButton.gameObject.SetActive(false);
             if (laterButton != null) laterButton.gameObject.SetActive(false);
             if (updateDetailsText != null) updateDetailsText.text = string.Empty;
