@@ -29,7 +29,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up .NET for NuGet restore
+      - name: Validate Android signing secrets\n        shell: bash\n        env:\n          KS_DATA: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}\n          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}\n          KS_ALIAS: ${{ secrets.ANDROID_KEYALIAS_NAME }}\n          KS_ALIAS_PASS: ${{ secrets.ANDROID_KEYALIAS_PASS }}\n        run: |\n          set -euo pipefail\n          for name in KS_DATA KS_PASS KS_ALIAS KS_ALIAS_PASS; do\n            if [ -z "${!name}" ]; then\n              echo "::error::Missing required GitHub Actions secret for Android signing: ${name}"\n              exit 1\n            fi\n          done\n\n      - name: Set up .NET for NuGet restore
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
