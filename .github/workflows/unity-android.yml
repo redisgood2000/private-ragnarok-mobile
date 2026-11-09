@@ -67,6 +67,7 @@ jobs:
             System.Diagnostics.DiagnosticSource \
             System.IO.Pipelines \
             System.Memory \
+            System.Runtime.CompilerServices.Unsafe \
             System.Text.Json \
             System.Text.Encodings.Web \
             System.Threading.Channels \
