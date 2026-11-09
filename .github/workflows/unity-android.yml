@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: unity-android-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-android:
     name: Build, verify and publish Android update
