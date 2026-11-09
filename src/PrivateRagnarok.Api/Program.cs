@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -22,6 +23,20 @@ builder.Services.AddDbContext<GameDbContext>(o => o.UseNpgsql(dbConnection));
 builder.Services.AddScoped<IPasswordHasher<PlayerAccount>, PasswordHasher<PlayerAccount>>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddSignalR();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("demo-guest", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 8,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+});
 builder.Services.AddHealthChecks();
 builder.Services.AddCors(o => o.AddPolicy("UnityClient", p =>
     p.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
@@ -47,9 +62,26 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 app.UseCors("UnityClient");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
+
+
+app.MapPost("/api/demo/guest", (DemoGuestRequest req, TokenService tokens) =>
+{
+    var requestedName = req.DisplayName?.Trim();
+    var displayName = string.IsNullOrWhiteSpace(requestedName)
+        ? $"Guest{Random.Shared.Next(1000, 9999)}"
+        : requestedName;
+
+    if (displayName.Length is < 3 or > 20 ||
+        !displayName.All(ch => char.IsAsciiLetterOrDigit(ch) || ch == '_'))
+        return Results.BadRequest(new { error = "Demo name must be 3-20 letters, numbers, or underscores." });
+
+    var guestId = Guid.NewGuid();
+    return Results.Ok(new AuthResponse(tokens.CreateGuest(guestId, displayName), guestId, displayName));
+}).RequireRateLimiting("demo-guest");
 
 app.MapPost("/api/auth/register", async (RegisterRequest req, GameDbContext db,
     IPasswordHasher<PlayerAccount> hasher, TokenService tokens, IConfiguration config, CancellationToken ct) =>
@@ -113,5 +145,7 @@ using (var scope = app.Services.CreateScope())
         """);
 }
 app.Run();
+
+public sealed record DemoGuestRequest(string? DisplayName);
 
 public partial class Program { }
