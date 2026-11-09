@@ -6,13 +6,15 @@ on:
     branches: [main]
     paths:
       - "client/Unity/Assets/RemoteContent/**"
+      - "client/Unity/Assets/PrivateRagnarok/Scripts/World/WorldBootstrap.cs"
+      - "client/Unity/Assets/Editor/RagnarokContentPatchBuildEntryPoint.cs"
 
 permissions:
   contents: write
 
 concurrency:
-  group: unity-content-patch-${{ github.ref }}
-  cancel-in-progress: true
+  group: private-ragnarok-publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-and-publish-patch:
