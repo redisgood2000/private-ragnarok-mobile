@@ -24,7 +24,14 @@ public static class RagnarokAndroidBuildEntryPoint
         new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 
         var world = new GameObject("WorldBootstrap");
-        world.AddComponent<PrivateRagnarok.Client.WorldBootstrap>();
+        var worldBootstrap = world.AddComponent<PrivateRagnarok.Client.WorldBootstrap>();
+        var worldShader = AssetDatabase.LoadAssetAtPath<Shader>(
+            "Assets/Resources/PrivateRagnarok/World.shader");
+        if (worldShader == null)
+            throw new System.Exception("Required world shader asset could not be imported at Assets/Resources/PrivateRagnarok/World.shader.");
+        var worldSerialized = new SerializedObject(worldBootstrap);
+        worldSerialized.FindProperty("worldShader").objectReferenceValue = worldShader;
+        worldSerialized.ApplyModifiedPropertiesWithoutUndo();
 
         var auth = new GameObject("Authentication");
         var authClient = auth.AddComponent<PrivateRagnarok.Client.ApiAuthClient>();
