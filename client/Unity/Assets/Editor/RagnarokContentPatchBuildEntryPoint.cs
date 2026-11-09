@@ -18,6 +18,7 @@ public static class RagnarokContentPatchBuildEntryPoint
     {
         if (!Directory.Exists(ContentRoot))
             Directory.CreateDirectory(ContentRoot);
+        AssetDatabase.Refresh();
 
         // The town is generated procedurally by the client. Bake that same original
         // environment into a prefab automatically so a patch can be published even
