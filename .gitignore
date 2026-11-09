@@ -12,3 +12,9 @@ Build/
 Builds/
 Logs/
 UserSettings/
+
+# Android signing material - never commit private release keys
+*.keystore
+*.jks
+*.p12
+*.pfx
