@@ -20,6 +20,8 @@ namespace PrivateRagnarok.Editor
             Directory.CreateDirectory("Assets/PrivateRagnarok/Scenes");
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             EditorApplication.ExecuteMenuItem("Window/TextMeshPro/Import TMP Essential Resources");
+            if (TMP_Settings.defaultFontAsset == null)
+                throw new System.Exception("TextMeshPro font resources are missing. Import TMP Essential Resources and retry.");
             new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 
             var world = new GameObject("WorldBootstrap");
@@ -147,6 +149,7 @@ namespace PrivateRagnarok.Editor
             var field = rect.gameObject.AddComponent<TMP_InputField>();
             field.textViewport = rect;
             field.textComponent = text;
+            field.targetGraphic = rect.GetComponent<Image>();
             field.placeholder = placeholderText;
             return field;
         }
