@@ -9,7 +9,7 @@ using UnityEngine.EventSystems;
 public static class RagnarokAndroidBuildEntryPoint
 {
     private const string ScenePath = "Assets/PrivateRagnarok/Scenes/Prototype.unity";
-    private static Font UiFont => Resources.GetBuiltinResource<Font>("Arial.ttf");
+    private static Font UiFont => Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
     [MenuItem("Private Ragnarok/Generate Prototype Scene")]
     public static void GenerateScene()
