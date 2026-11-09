@@ -6,25 +6,18 @@ using UnityEngine.UI;
 
 namespace PrivateRagnarok.Client
 {
-    [Serializable] internal sealed class GitHubRelease
+    // This file is hosted separately from the APK. Editing it does not rebuild the app.
+    [Serializable] internal sealed class RemoteUpdateManifest
     {
-        public string tag_name;
-        public string body;
-        public bool draft;
-        public bool prerelease;
-        public GitHubReleaseAsset[] assets;
-    }
-    [Serializable] internal sealed class GitHubReleaseAsset
-    {
-        public string name;
-        public string browser_download_url;
-        public long size;
+        public bool enabled = true;
+        public string latestVersion;
+        public string apkUrl;
+        public string releaseNotes;
     }
 
     public sealed class AndroidUpdateController : MonoBehaviour
     {
-        private const string ReleasesApi = "https://api.github.com/repos/redisgood2000/private-ragnarok-mobile/releases/latest";
-        private const string ApkName = "PrivateRagnarok.apk";
+        private const string ManifestUrl = "https://raw.githubusercontent.com/redisgood2000/private-ragnarok-mobile/main/update/update.json";
         [SerializeField] private Text statusText;
         [SerializeField] private Text updateDetailsText;
         [SerializeField] private Button updateButton;
@@ -52,10 +45,11 @@ namespace PrivateRagnarok.Client
 #if UNITY_ANDROID && !UNITY_EDITOR
             if (checking) yield break;
             checking = true;
-            using (var request = UnityWebRequest.Get(ReleasesApi))
+            var manifestUrl = ManifestUrl + "?t=" + DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            using (var request = UnityWebRequest.Get(manifestUrl))
             {
                 request.timeout = 15;
-                request.SetRequestHeader("Accept", "application/vnd.github+json");
+                request.SetRequestHeader("Cache-Control", "no-cache");
                 request.SetRequestHeader("User-Agent", "PrivateRagnarok-Android-Updater");
                 yield return request.SendWebRequest();
                 if (request.result != UnityWebRequest.Result.Success)
@@ -63,35 +57,48 @@ namespace PrivateRagnarok.Client
                     SetStatus("Update check unavailable. You can still play.");
                     checking = false; yield break;
                 }
-                GitHubRelease release = null;
-                try { release = JsonUtility.FromJson<GitHubRelease>(request.downloadHandler.text); }
+
+                RemoteUpdateManifest manifest = null;
+                try { manifest = JsonUtility.FromJson<RemoteUpdateManifest>(request.downloadHandler.text); }
                 catch (Exception) { }
-                if (release == null || release.draft || release.prerelease || string.IsNullOrWhiteSpace(release.tag_name))
+                if (manifest == null || !manifest.enabled ||
+                    string.IsNullOrWhiteSpace(manifest.latestVersion) ||
+                    string.IsNullOrWhiteSpace(manifest.apkUrl))
                 {
                     SetStatus("You're using the latest available version.");
                     checking = false; yield break;
                 }
-                var tag = release.tag_name.TrimStart('v', 'V');
+
                 Version remote, local;
-                if (!Version.TryParse(tag, out remote) || !Version.TryParse(Application.version, out local) || remote <= local)
+                var remoteTag = manifest.latestVersion.Trim().TrimStart('v', 'V');
+                if (!Version.TryParse(remoteTag, out remote) ||
+                    !Version.TryParse(Application.version, out local))
+                {
+                    SetStatus("Update information is invalid. You can still play.");
+                    checking = false; yield break;
+                }
+                if (remote <= local)
                 {
                     SetStatus("You're using the latest version (" + Application.version + ").");
                     checking = false; yield break;
                 }
-                GitHubReleaseAsset apk = null;
-                if (release.assets != null)
-                    foreach (var asset in release.assets)
-                        if (asset != null && string.Equals(asset.name, ApkName, StringComparison.OrdinalIgnoreCase)) { apk = asset; break; }
-                if (apk == null || string.IsNullOrWhiteSpace(apk.browser_download_url))
+
+                Uri apkUri;
+                if (!Uri.TryCreate(manifest.apkUrl, UriKind.Absolute, out apkUri) ||
+                    apkUri.Scheme != Uri.UriSchemeHttps ||
+                    !string.Equals(apkUri.Host, "github.com", StringComparison.OrdinalIgnoreCase))
                 {
-                    SetStatus("Update " + release.tag_name + " is published but its APK is not available yet.");
+                    SetStatus("Update link is invalid. You can still play.");
                     checking = false; yield break;
                 }
-                latestVersion = release.tag_name;
-                downloadUrl = apk.browser_download_url;
+
+                latestVersion = manifest.latestVersion;
+                downloadUrl = manifest.apkUrl;
                 if (updateDetailsText != null)
                     updateDetailsText.text = "Version " + latestVersion + " is available.\n\n" +
-                        (string.IsNullOrWhiteSpace(release.body) ? "Bug fixes and improvements." : release.body);
+                        (string.IsNullOrWhiteSpace(manifest.releaseNotes)
+                            ? "Bug fixes and improvements."
+                            : manifest.releaseNotes);
                 if (updateButton != null) updateButton.gameObject.SetActive(true);
                 if (laterButton != null) laterButton.gameObject.SetActive(true);
                 if (updatePromptPanel != null) updatePromptPanel.SetActive(true);
