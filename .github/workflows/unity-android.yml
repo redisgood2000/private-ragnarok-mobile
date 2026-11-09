@@ -24,16 +24,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Restore Unity's generated import database between runs. The cache key changes
-      # when the Unity editor version or package/dependency manifests change.
-      - name: Cache Unity Library
-        uses: actions/cache@v4
-        with:
-          path: client/Unity/Library
-          key: ${{ runner.os }}-unity-library-${{ hashFiles('client/Unity/ProjectSettings/ProjectVersion.txt', 'client/Unity/Packages/manifest.json', 'client/Unity/Assets/packages.config') }}
-          restore-keys: |
-            ${{ runner.os }}-unity-library-
-
       # NuGetForUnity writes restored DLLs into Assets/Packages. Cache those too,
       # otherwise Unity cannot reuse the previous dependency import state.
       - name: Cache Unity NuGet packages
@@ -58,6 +48,27 @@ jobs:
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
           export PATH="$PATH:$HOME/.dotnet/tools"
           nugetforunity restore client/Unity
+
+      - name: Verify restored Unity assemblies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d client/Unity/Assets/Packages
+          find client/Unity/Assets/Packages -type f -name '*.dll' -print | sort
+          for assembly in \
+            Microsoft.AspNetCore.Connections.Abstractions \
+            Microsoft.Extensions.Options \
+            Microsoft.Extensions.DependencyInjection.Abstractions \
+            Microsoft.Extensions.Logging.Abstractions \
+            System.Text.Json \
+            System.Text.Encodings.Web \
+            System.IO.Pipelines \
+            System.Threading.Channels; do
+            if ! find client/Unity/Assets/Packages -type f -name "${assembly}.dll" -print -quit | grep -q .; then
+              echo "::error::NuGet restore did not produce ${assembly}.dll"
+              exit 1
+            fi
+          done
 
       - name: Build Android APK
         uses: game-ci/unity-builder@v4
