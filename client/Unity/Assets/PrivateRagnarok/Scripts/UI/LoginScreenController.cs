@@ -74,9 +74,15 @@ namespace PrivateRagnarok.Client
             if (authenticatedPanel != null) authenticatedPanel.SetActive(true);
             if (worldNetworkClient == null) worldNetworkClient = FindObjectOfType<WorldNetworkClient>();
             if (worldNetworkClient != null && authClient != null)
+            {
+                worldNetworkClient.ConnectionStatusChanged -= OnWorldStatusChanged;
+                worldNetworkClient.ConnectionStatusChanged += OnWorldStatusChanged;
                 worldNetworkClient.ConfigureAndConnect(authClient.AccessToken, response.playerId,
                     response.username, authClient.ApiBaseUrl);
+            }
         }
+
+        private void OnWorldStatusChanged(string message) => Show(message);
 
         private void OnFailed(string message)
         {
@@ -100,6 +106,7 @@ namespace PrivateRagnarok.Client
         {
             if (loginButton != null) loginButton.onClick.RemoveListener(Login);
             if (registerButton != null) registerButton.onClick.RemoveListener(Register);
+            if (worldNetworkClient != null) worldNetworkClient.ConnectionStatusChanged -= OnWorldStatusChanged;
         }
     }
 }
