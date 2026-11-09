@@ -47,7 +47,7 @@ jobs:
           targetPlatform: Android
           buildMethod: PrivateRagnarok.Editor.AndroidBuildBootstrap.Build
           versioning: Semantic
-          androidAppBundle: false
+          allowDirtyBuild: true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
