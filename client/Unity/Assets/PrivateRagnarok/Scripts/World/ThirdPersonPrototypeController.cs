@@ -12,11 +12,13 @@ namespace PrivateRagnarok.Client
         private CharacterController controller;
 
         public Transform CameraTransform { get => cameraTransform; set => cameraTransform = value; }
+        public bool NetworkControlled { get; set; }
 
         private void Awake() => controller = GetComponent<CharacterController>();
 
         private void Update()
         {
+            if (NetworkControlled) return;
             var input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
             input = Vector2.ClampMagnitude(input, 1f);
 
