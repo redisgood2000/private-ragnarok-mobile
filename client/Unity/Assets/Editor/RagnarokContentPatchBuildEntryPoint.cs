@@ -24,23 +24,25 @@ public static class RagnarokContentPatchBuildEntryPoint
         var hasWorldRoot = false;
         foreach (var path in assetPaths)
         {
-            if (!path.StartsWith(ContentRoot + "/", StringComparison.Ordinal))
+            if (!path.StartsWith(ContentRoot + "/", StringComparison.Ordinal) ||
+                path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
+                path.EndsWith(".asmdef", StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (prefab == null) continue;
             var importer = AssetImporter.GetAtPath(path);
             if (importer == null) continue;
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab != null && string.Equals(prefab.name, "WorldRoot", StringComparison.Ordinal))
+                hasWorldRoot = true;
+
             importer.assetBundleName = BundleName;
             importer.assetBundleVariant = string.Empty;
             importer.SaveAndReimport();
             bundleAssets.Add(path);
-            if (string.Equals(prefab.name, "WorldRoot", StringComparison.Ordinal))
-                hasWorldRoot = true;
         }
 
         if (bundleAssets.Count == 0)
-            throw new InvalidOperationException("Assets/RemoteContent contains no prefab assets.");
+            throw new InvalidOperationException("Assets/RemoteContent contains no importable assets.");
         if (!hasWorldRoot)
             throw new InvalidOperationException("Add a prefab named exactly WorldRoot under Assets/RemoteContent before building a patch.");
 
