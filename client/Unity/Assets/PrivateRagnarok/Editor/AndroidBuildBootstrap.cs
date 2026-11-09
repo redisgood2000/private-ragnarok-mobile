@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace PrivateRagnarok.Editor
 {
@@ -18,6 +19,8 @@ namespace PrivateRagnarok.Editor
         {
             Directory.CreateDirectory("Assets/PrivateRagnarok/Scenes");
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            EditorApplication.ExecuteMenuItem("Window/TextMeshPro/Import TMP Essential Resources");
+            new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 
             var world = new GameObject("WorldBootstrap");
             world.AddComponent<PrivateRagnarok.Client.WorldBootstrap>();
@@ -47,13 +50,14 @@ namespace PrivateRagnarok.Editor
             subtitle.alignment = TextAlignmentOptions.Center;
             subtitle.color = Color.white;
 
-            var username = Input("Username", panel, -205);
-            var password = Input("Password (12+ characters)", panel, -300);
+            var serverUrl = Input("Game server HTTPS URL", panel, -170);
+            var username = Input("Username", panel, -245);
+            var password = Input("Password (12+ characters)", panel, -320);
             password.contentType = TMP_InputField.ContentType.Password;
             var invite = Input("Invite code (registration only)", panel, -395);
 
-            var loginButton = Button("LOGIN", panel, -490, new Color(0.16f, 0.36f, 0.57f));
-            var registerButton = Button("REGISTER", panel, -565, new Color(0.34f, 0.25f, 0.12f));
+            var loginButton = Button("LOGIN", panel, -475, new Color(0.16f, 0.36f, 0.57f));
+            var registerButton = Button("REGISTER", panel, -545, new Color(0.34f, 0.25f, 0.12f));
             var status = Text("Set your HTTPS API URL in the ApiAuthClient Inspector.", panel,
                 new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 28), new Vector2(570, 54), 17);
             status.alignment = TextAlignmentOptions.Center;
@@ -62,6 +66,7 @@ namespace PrivateRagnarok.Editor
             var controller = auth.AddComponent<PrivateRagnarok.Client.LoginScreenController>();
             var serialized = new SerializedObject(controller);
             serialized.FindProperty("authClient").objectReferenceValue = authClient;
+            serialized.FindProperty("serverUrlInput").objectReferenceValue = serverUrl;
             serialized.FindProperty("usernameInput").objectReferenceValue = username;
             serialized.FindProperty("passwordInput").objectReferenceValue = password;
             serialized.FindProperty("inviteCodeInput").objectReferenceValue = invite;
@@ -118,6 +123,7 @@ namespace PrivateRagnarok.Editor
             var rect = Rect(value, parent, anchorMin, anchorMax, position, size);
             var text = rect.gameObject.AddComponent<TextMeshProUGUI>();
             text.text = value; text.fontSize = fontSize; text.color = Color.white;
+            text.font = TMP_Settings.defaultFontAsset;
             text.enableWordWrapping = true;
             return text;
         }
@@ -130,9 +136,11 @@ namespace PrivateRagnarok.Editor
             var textRect = Rect("Text", rect, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(-28, -16));
             var text = textRect.gameObject.AddComponent<TextMeshProUGUI>();
             text.fontSize = 25; text.color = Color.white;
+            text.font = TMP_Settings.defaultFontAsset;
             var placeholderRect = Rect("Placeholder", rect, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(-28, -16));
             var placeholderText = placeholderRect.gameObject.AddComponent<TextMeshProUGUI>();
             placeholderText.text = placeholder; placeholderText.fontSize = 23;
+            placeholderText.font = TMP_Settings.defaultFontAsset;
             placeholderText.fontStyle = FontStyles.Italic;
             placeholderText.color = new Color(0.65f, 0.68f, 0.72f);
             var field = rect.gameObject.AddComponent<TMP_InputField>();
