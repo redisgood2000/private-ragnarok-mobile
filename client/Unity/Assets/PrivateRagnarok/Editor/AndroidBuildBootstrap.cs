@@ -58,7 +58,7 @@ namespace PrivateRagnarok.Editor
 
             var loginButton = Button("LOGIN", panel, -475, new Color(0.16f, 0.36f, 0.57f));
             var registerButton = Button("REGISTER", panel, -545, new Color(0.34f, 0.25f, 0.12f));
-            var status = Text("Set your HTTPS API URL in the ApiAuthClient Inspector.", panel,
+            var status = Text("Enter your public HTTPS game server address above.", panel,
                 new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 28), new Vector2(570, 54), 17);
             status.alignment = TextAlignmentOptions.Center;
             status.color = Color.white;
