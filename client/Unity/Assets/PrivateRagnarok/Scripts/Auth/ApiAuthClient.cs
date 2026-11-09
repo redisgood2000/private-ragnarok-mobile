@@ -13,6 +13,11 @@ namespace PrivateRagnarok.Client
         public string inviteCode;
     }
 
+    [Serializable] public sealed class DemoGuestPayload
+    {
+        public string displayName;
+    }
+
     [Serializable] public sealed class LoginPayload
     {
         public string username;
@@ -42,6 +47,12 @@ namespace PrivateRagnarok.Client
         }
         public string AccessToken { get; private set; }
         public AuthResponse CurrentUser { get; private set; }
+
+        public IEnumerator StartDemo(string displayName, Action<AuthResponse> success, Action<string> failure)
+        {
+            var payload = new DemoGuestPayload { displayName = displayName };
+            yield return Send("/api/demo/guest", JsonUtility.ToJson(payload), success, failure);
+        }
 
         public IEnumerator Register(string username, string password, string inviteCode,
             Action<AuthResponse> success, Action<string> failure)
