@@ -114,6 +114,9 @@ namespace PrivateRagnarok.Client
             }
 #else
             failure = "Remote content patches are loaded in the Android build.";
+            if (status != null) status(failure);
+            completed?.Invoke(null);
+            yield break;
 #endif
             if (!string.IsNullOrEmpty(failure) && status != null) status(failure);
             completed?.Invoke(prefab);
