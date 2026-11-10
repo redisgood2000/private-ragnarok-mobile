@@ -208,7 +208,20 @@ namespace PrivateRagnarok.Client
                 using (var build = new AndroidJavaClass("android.os.Build$VERSION"))
                 {
                     int sdk = build.GetStatic<int>("SDK_INT");
-                    if (sdk >= 26 && !activity.Call<bool>("canRequestPackageInstalls"))
+                    if (sdk >= 26)
+                    {
+                        AndroidJavaObject packageManager = null;
+                        bool canInstall = false;
+                        try
+                        {
+                            packageManager = activity.Call<AndroidJavaObject>("getPackageManager");
+                            canInstall = packageManager.Call<bool>("canRequestPackageInstalls");
+                        }
+                        finally
+                        {
+                            if (packageManager != null) packageManager.Dispose();
+                        }
+                        if (!canInstall)
                     {
                         using (var settings = new AndroidJavaObject("android.content.Intent", "android.settings.MANAGE_UNKNOWN_APP_SOURCES"))
                         using (var uriClass = new AndroidJavaClass("android.net.Uri"))
