@@ -92,15 +92,29 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish versioned content bundle
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: content-v1
-          name: Private Ragnarok Content Patches
-          target_commitish: ${{ github.sha }}
-          files: client/Unity/Build/ContentPatch/worldcontent
-          overwrite_files: true
-          make_latest: false
+      - name: Publish content bundle to repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUNDLE_B64="$(base64 -w0 client/Unity/Build/ContentPatch/worldcontent)"
+          EXISTING="$(gh api "repos/${GITHUB_REPOSITORY}/contents/update/worldcontent" 2>/dev/null || true)"
+          if [ -n "$EXISTING" ]; then
+            FILE_SHA="$(printf '%s' "$EXISTING" | jq -r .sha)"
+            gh api "repos/${GITHUB_REPOSITORY}/contents/update/worldcontent" \
+              -X PUT \
+              -f message="Publish Android world content bundle" \
+              -f branch="main" \
+              -f sha="$FILE_SHA" \
+              -f content="$BUNDLE_B64"
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/contents/update/worldcontent" \
+              -X PUT \
+              -f message="Publish Android world content bundle" \
+              -f branch="main" \
+              -f content="$BUNDLE_B64"
+          fi
 
       - name: Enable the published patch in update manifest
         env:
@@ -109,7 +123,7 @@ jobs:
         run: |
           set -euo pipefail
           HASH="$(cat client/Unity/Build/ContentPatch/patch-sha256.txt)"
-          BUNDLE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/content-v1/worldcontent"
+          BUNDLE_URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/update/worldcontent"
           PATCH_VERSION="1.0.${GITHUB_RUN_NUMBER}"
 
           REMOTE_MANIFEST="$(gh api "repos/${GITHUB_REPOSITORY}/contents/update/update.json")"
