@@ -234,6 +234,7 @@ namespace PrivateRagnarok.Client
                         }
                         SetStatus("Allow installs for Private Ragnarok, return here, then tap Update again.");
                         downloading = false; if (updateButton != null) updateButton.interactable = true; yield break;
+                        }
                     }
                     using (var intent = new AndroidJavaObject("android.content.Intent", "android.intent.action.INSTALL_PACKAGE"))
                     {
