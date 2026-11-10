@@ -14,3 +14,6 @@ hash, bundle, or prefab is invalid, the game falls back to the built-in prototyp
 
 Do not put C# scripts, native libraries, Android plugins, credentials, or executable code here.
 Those require an APK build and are not supported as remote patches.
+
+
+The original procedural town is automatically baked into WorldRoot.prefab during the content patch build. Published bundles are stored at update/worldcontent and served from raw.githubusercontent.com; the manifest is enabled only after the bundle commit succeeds.
