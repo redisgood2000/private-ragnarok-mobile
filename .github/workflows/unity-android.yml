@@ -175,6 +175,12 @@ jobs:
           REMOTE_MANIFEST="$(gh api "repos/${GITHUB_REPOSITORY}/contents/update/update.json")"
           CONTENT_SHA="$(printf '%s' "$REMOTE_MANIFEST" | jq -r .sha)"
           printf '%s' "$REMOTE_MANIFEST" | jq -r .content | tr -d '\n' | base64 -d > update/update.json
+          CURRENT_VERSION="$(jq -r '.latestVersion // "0.0.0"' update/update.json)"
+          NEWEST_VERSION="$(printf '%s\n' "$CURRENT_VERSION" "$VERSION" | sort -V | tail -n1)"
+          if [ "$NEWEST_VERSION" != "$VERSION" ]; then
+            echo "::notice::Skipping stale APK manifest write for $VERSION; $CURRENT_VERSION is already published."
+            exit 0
+          fi
           jq \
             --arg version "$VERSION" \
             --arg url "$APK_URL" \
