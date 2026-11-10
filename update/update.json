@@ -1,7 +1,7 @@
 {
   "enabled": true,
-  "latestVersion": "0.1.67",
-  "apkUrl": "https://github.com/redisgood2000/private-ragnarok-mobile/releases/download/v0.1.67/PrivateRagnarok.apk",
+  "latestVersion": "0.1.77",
+  "apkUrl": "https://github.com/redisgood2000/private-ragnarok-mobile/releases/download/v0.1.77/PrivateRagnarok.apk",
   "releaseNotes": "Latest available Private Ragnarok build.",
   "patchEnabled": false,
   "patchVersion": "0.0.0",
