@@ -44,8 +44,11 @@ namespace PrivateRagnarok.Client
                 BuildDecorations();
                 BuildLighting();
             }
-            BuildPlayer();
+            var player = BuildPlayer();
             BuildHudAnchor();
+            var hudObject = new GameObject("Character Status HUD");
+            hudObject.transform.SetParent(transform, false);
+            hudObject.AddComponent<CharacterStatusHud>().Initialize(player.transform, prototypePlayerName);
         }
 
         private void CreateMaterials(bool persistForPatch = false)
@@ -191,7 +194,7 @@ namespace PrivateRagnarok.Client
             sun.shadows = LightShadows.Soft;
         }
 
-        private void BuildPlayer()
+        private GameObject BuildPlayer()
         {
             var player = new GameObject(prototypePlayerName);
             player.transform.SetParent(transform, false);
@@ -221,6 +224,7 @@ namespace PrivateRagnarok.Client
             follow.Initialize(player.transform);
             movement.CameraTransform = cameraObject.transform;
             network.SetMovementCamera(cameraObject.transform);
+            return player;
         }
 
         private void BuildHudAnchor()
