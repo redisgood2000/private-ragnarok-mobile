@@ -15,10 +15,14 @@ namespace PrivateRagnarok.Client
         private Vector3 previousPosition;
         private Material skin, hair, tunic, trim, leather, pants, boots, metal, eye;
 
-        public void Initialize()
+        public void Initialize(Shader sharedWorldShader)
         {
             if (bodyRoot != null) return;
-            BuildMaterials();
+            if (sharedWorldShader == null)
+                sharedWorldShader = Resources.Load<Shader>("PrivateRagnarok/World");
+            if (sharedWorldShader == null)
+                throw new System.InvalidOperationException("Character visual shader is missing. Expected Resources/PrivateRagnarok/World.shader.");
+            BuildMaterials(sharedWorldShader);
             previousPosition = transform.position;
             bodyRoot = new GameObject("Adventurer Visual").transform;
             bodyRoot.SetParent(transform, false);
@@ -26,24 +30,23 @@ namespace PrivateRagnarok.Client
             BuildBody();
         }
 
-        private void BuildMaterials()
+        private void BuildMaterials(Shader sharedWorldShader)
         {
-            skin = Mat("Warm skin", new Color(0.91f, 0.66f, 0.48f));
-            hair = Mat("Chestnut hair", new Color(0.24f, 0.105f, 0.055f));
-            tunic = Mat("Royal blue tunic", new Color(0.12f, 0.32f, 0.62f));
-            trim = Mat("Gold trim", new Color(0.92f, 0.66f, 0.20f));
-            leather = Mat("Brown leather", new Color(0.28f, 0.15f, 0.08f));
-            pants = Mat("Dark trousers", new Color(0.16f, 0.19f, 0.27f));
-            boots = Mat("Leather boots", new Color(0.20f, 0.105f, 0.055f));
-            metal = Mat("Brushed steel", new Color(0.62f, 0.68f, 0.72f));
-            eye = Mat("Eyes", new Color(0.12f, 0.075f, 0.045f));
+            skin = Mat(sharedWorldShader, "Warm skin", new Color(0.91f, 0.66f, 0.48f));
+            hair = Mat(sharedWorldShader, "Chestnut hair", new Color(0.24f, 0.105f, 0.055f));
+            tunic = Mat(sharedWorldShader, "Royal blue tunic", new Color(0.12f, 0.32f, 0.62f));
+            trim = Mat(sharedWorldShader, "Gold trim", new Color(0.92f, 0.66f, 0.20f));
+            leather = Mat(sharedWorldShader, "Brown leather", new Color(0.28f, 0.15f, 0.08f));
+            pants = Mat(sharedWorldShader, "Dark trousers", new Color(0.16f, 0.19f, 0.27f));
+            boots = Mat(sharedWorldShader, "Leather boots", new Color(0.20f, 0.105f, 0.055f));
+            metal = Mat(sharedWorldShader, "Brushed steel", new Color(0.62f, 0.68f, 0.72f));
+            eye = Mat(sharedWorldShader, "Eyes", new Color(0.12f, 0.075f, 0.045f));
         }
 
-        private static Material Mat(string label, Color color)
+        private static Material Mat(Shader shader, string label, Color color)
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null) shader = Shader.Find("Standard");
-            if (shader == null) shader = Shader.Find("Sprites/Default");
+            // Use the same serialized, included shader as the world. Shader.Find can
+            // return null in Android player builds when Unity strips unused shaders.
             var material = new Material(shader) { name = label, color = color };
             return material;
         }
