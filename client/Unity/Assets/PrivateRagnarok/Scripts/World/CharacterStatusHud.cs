@@ -84,7 +84,7 @@ namespace PrivateRagnarok.Client
             nameText = MakeText(characterName, panel, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(84f, -27f), new Vector2(-104f, 34f), 27, Color.white);
             nameText.fontStyle = FontStyle.Bold;
-            classText = MakeText("NOVICE  •  ONLINE", panel, new Vector2(0f, 1f), new Vector2(1f, 1f),
+            classText = MakeText("NOVICE  •  LOCAL DEMO", panel, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(84f, -58f), new Vector2(-104f, 25f), 16, new Color(0.77f, 0.79f, 0.83f));
             levelText = MakeText("BASE LV. 1", panel, new Vector2(1f, 1f), new Vector2(1f, 1f),
                 new Vector2(-18f, -27f), new Vector2(116f, 28f), 17, new Color(0.96f, 0.78f, 0.38f));
@@ -125,7 +125,7 @@ namespace PrivateRagnarok.Client
         {
             if (nameText == null) return;
             nameText.text = characterName;
-            classText.text = jobName.ToUpperInvariant() + "  •  ONLINE";
+            classText.text = jobName.ToUpperInvariant() + "  •  LOCAL DEMO";
             levelText.text = "BASE LV. " + level;
             hpText.text = "HP " + Mathf.CeilToInt(hp) + " / " + Mathf.CeilToInt(maxHp);
             spText.text = "SP " + Mathf.CeilToInt(sp) + " / " + Mathf.CeilToInt(maxSp);
