@@ -12,12 +12,14 @@ namespace PrivateRagnarok.Client
         private Transform leftArm, rightArm, leftLeg, rightLeg, cape;
         private Vector3 bodyBasePosition;
         private float phase;
+        private Vector3 previousPosition;
         private Material skin, hair, tunic, trim, leather, pants, boots, metal, eye;
 
         public void Initialize()
         {
             if (bodyRoot != null) return;
             BuildMaterials();
+            previousPosition = transform.position;
             bodyRoot = new GameObject("Adventurer Visual").transform;
             bodyRoot.SetParent(transform, false);
             bodyBasePosition = bodyRoot.localPosition;
@@ -122,10 +124,10 @@ namespace PrivateRagnarok.Client
         private void Update()
         {
             if (bodyRoot == null) return;
-            var velocity = new Vector3(transform.position.x, 0f, transform.position.z);
-            var moving = false;
-            var input = GetComponent<MobileMovementInput>();
-            if (input != null) moving = input.Direction.sqrMagnitude > 0.025f;
+            var delta = transform.position - previousPosition;
+            delta.y = 0f;
+            var moving = delta.sqrMagnitude > 0.00001f;
+            previousPosition = transform.position;
             phase += Time.deltaTime * (moving ? 10f : 2.2f);
             var swing = moving ? Mathf.Sin(phase) * 28f : Mathf.Sin(phase) * 2f;
             leftLeg.localRotation = Quaternion.Euler(swing, 0f, 0f);
