@@ -199,9 +199,8 @@ namespace PrivateRagnarok.Client
             var player = new GameObject(prototypePlayerName);
             player.transform.SetParent(transform, false);
             player.transform.position = playerSpawn;
-            var capsule = CreatePrimitive(PrimitiveType.Capsule, "Adventurer body",
-                playerSpawn + Vector3.up, Vector3.one, playerMat, player.transform);
-            Destroy(capsule.GetComponent<Collider>());
+            var actorVisual = player.AddComponent<CharacterActorVisual>();
+            actorVisual.Initialize();
             var controller = player.AddComponent<CharacterController>();
             controller.height = 1.8f;
             controller.radius = 0.38f;
