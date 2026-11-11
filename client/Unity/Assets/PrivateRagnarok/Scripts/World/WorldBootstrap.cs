@@ -200,7 +200,8 @@ namespace PrivateRagnarok.Client
             player.transform.SetParent(transform, false);
             player.transform.position = playerSpawn;
             var actorVisual = player.AddComponent<CharacterActorVisual>();
-            actorVisual.Initialize();
+            var actorShader = worldShader != null ? worldShader : Resources.Load<Shader>("PrivateRagnarok/World");
+            actorVisual.Initialize(actorShader);
             var controller = player.AddComponent<CharacterController>();
             controller.height = 1.8f;
             controller.radius = 0.38f;
