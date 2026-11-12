@@ -24,6 +24,7 @@ namespace PrivateRagnarok.Client
             if (!buildOnStart) return;
 
             // Load the remote content bundle before constructing the world.
+            // The bundle can carry WorldRoot, CharacterActor, and imported Unity textures.
             // In the Unity Editor this coroutine falls back to built-in content.
             remoteContentPatcher = GetComponent<RemoteContentPatcher>();
             if (remoteContentPatcher == null)
