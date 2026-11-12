@@ -72,3 +72,18 @@ The reference site states that Ragnarok-related graphics are copyrighted by
 Gravity Co., Ltd. and Lee Myoungjin. The catalog tool copies metadata only;
 it does not scrape, extract, or redistribute website images or game graphics.
 Only add art that you own or are licensed to use.
+
+CHIBI SWORDSMAN CHARACTER RESOURCE
+The original procedural Blender generator is stored at:
+  tools/blender/create_chibi_swordsman.py
+
+The generated Unity FBX is automatically copied to:
+  Assets/RemoteContent/Characters/Cute_Ragnarok_Inspired_Chibi_Swordsman.fbx
+
+The Android content-patch builder imports this FBX as a Generic rig, creates
+CharacterActor.prefab and a simple default Idle Animator Controller from the
+embedded animation clip, then includes the FBX, prefab, and controller in the
+worldcontent AssetBundle. WorldBootstrap loads the remote CharacterActor asset
+by its exact asset name, so this character can replace the procedural player
+without requiring a new APK. The native editable .blend file remains a separate
+GitHub Actions artifact; it is not bundled into the Android game.
