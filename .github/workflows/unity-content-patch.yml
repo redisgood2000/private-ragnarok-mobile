@@ -106,19 +106,23 @@ jobs:
           EXISTING="$(gh api "repos/${GITHUB_REPOSITORY}/contents/update/worldcontent" 2>/dev/null || true)"
           if [ -n "$EXISTING" ]; then
             FILE_SHA="$(printf '%s' "$EXISTING" | jq -r .sha)"
-            gh api "repos/${GITHUB_REPOSITORY}/contents/update/worldcontent" \
-              -X PUT \
-              -f message="Publish Android world content bundle" \
-              -f branch="main" \
-              -f sha="$FILE_SHA" \
-              -f content="$BUNDLE_B64"
+            jq -n \
+              --arg message "Publish Android world content bundle" \
+              --arg branch "main" \
+              --arg sha "$FILE_SHA" \
+              --arg content "$BUNDLE_B64" \
+              '{message:$message, branch:$branch, sha:$sha, content:$content}' > /tmp/worldcontent-payload.json
           else
-            gh api "repos/${GITHUB_REPOSITORY}/contents/update/worldcontent" \
-              -X PUT \
-              -f message="Publish Android world content bundle" \
-              -f branch="main" \
-              -f content="$BUNDLE_B64"
+            jq -n \
+              --arg message "Publish Android world content bundle" \
+              --arg branch "main" \
+              --arg content "$BUNDLE_B64" \
+              '{message:$message, branch:$branch, content:$content}' > /tmp/worldcontent-payload.json
           fi
+          # Pass the JSON body via stdin/file, not argv: the base64 bundle is large.
+          gh api "repos/${GITHUB_REPOSITORY}/contents/update/worldcontent" \
+            -X PUT \
+            --input /tmp/worldcontent-payload.json
 
       - name: Enable the published patch in update manifest
         env:
