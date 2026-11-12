@@ -4,9 +4,9 @@
   "apkUrl": "https://github.com/redisgood2000/private-ragnarok-mobile/releases/download/v0.1.114/PrivateRagnarok.apk",
   "releaseNotes": "Latest available Private Ragnarok build.",
   "patchEnabled": true,
-  "patchVersion": "1.0.20",
+  "patchVersion": "1.0.21",
   "patchBundleUrl": "https://raw.githubusercontent.com/redisgood2000/private-ragnarok-mobile/main/update/worldcontent",
   "patchBundleName": "worldcontent",
-  "patchSha256": "765cfa10da819778a0e4d69de6ad5bb9aa0a8aa99c9730d34ad7610d437d22c1",
+  "patchSha256": "fd66c37bcd76fa34de497c86dac8cdac5c76b958665f2bf0cce5d49375c88455",
   "worldPrefab": "WorldRoot"
 }
