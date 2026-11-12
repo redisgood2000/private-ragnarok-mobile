@@ -118,7 +118,9 @@ curve=bpy.data.curves.new("Friendly smile","CURVE"); curve.dimensions="3D"; curv
 sp=curve.splines.new("BEZIER"); sp.bezier_points.add(2)
 for p,co in zip(sp.bezier_points,[(-.09,-.535,2.25),(0,-.552,2.22),(.09,-.535,2.25)]):
     p.co=co; p.handle_left_type="AUTO"; p.handle_right_type="AUTO"
-sm=bpy.data.objects.new("Friendly smile",curve); bpy.context.collection.objects.link(sm); curve.materials.append(dark); bind(sm,"head")
+sm=bpy.data.objects.new("Friendly smile",curve); bpy.context.collection.objects.link(sm); curve.materials.append(dark)
+bpy.ops.object.select_all(action="DESELECT"); sm.select_set(True); bpy.context.view_layer.objects.active=sm
+bpy.ops.object.convert(target="MESH"); sm=bpy.context.object; bind(sm,"head")
 # headband and center gem
 uv("Headband",(0,-.05,2.91),(.62,.51,.105),gold,"head")
 uv("Headband jewel",(0,-.55,2.91),(.10,.045,.10),green,"head")
@@ -163,7 +165,8 @@ bpy.ops.object.light_add(type="AREA", location=(1,-4,6)); key=bpy.context.object
 key.rotation_euler=(math.radians(25),0,math.radians(-12))
 bpy.ops.object.light_add(type="AREA", location=(-4,-1,3)); fill=bpy.context.object; fill.name="Softbox Fill"; fill.data.energy=260; fill.data.size=4
 fill.rotation_euler=(math.radians(35),0,math.radians(-35))
-scene=bpy.context.scene; scene.render.engine="BLENDER_EEVEE_NEXT"
+scene=bpy.context.scene
+scene.render.engine="BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items.keys() else "BLENDER_EEVEE"
 scene.render.resolution_x=900; scene.render.resolution_y=900; scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="PNG"; scene.render.film_transparent=False
 scene.world.color=(.055,.065,.09)
