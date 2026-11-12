@@ -258,7 +258,8 @@ namespace PrivateRagnarok.Client
             var cameraObject = new GameObject("World camera");
             cameraObject.transform.SetParent(transform, false);
             var camera = cameraObject.AddComponent<Camera>();
-            camera.fieldOfView = 60f;
+            camera.orthographic = true;
+            camera.orthographicSize = 8.5f;
             camera.nearClipPlane = 0.1f;
             camera.farClipPlane = 250f;
             cameraObject.AddComponent<AudioListener>();
