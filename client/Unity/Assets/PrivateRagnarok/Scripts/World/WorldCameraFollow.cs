@@ -2,79 +2,99 @@ using UnityEngine;
 
 namespace PrivateRagnarok.Client
 {
-    /// <summary>Simple orbit camera for the prototype; mouse in editor, one-finger drag on mobile.</summary>
+    /// <summary>
+    /// Fixed isometric follow camera for the mobile MMORPG prototype.
+    /// Uses orthographic projection to preserve the classic angled-RPG presentation.
+    /// Pinch and mouse wheel adjust zoom; camera rotation remains fixed.
+    /// </summary>
+    [DisallowMultipleComponent]
     public sealed class WorldCameraFollow : MonoBehaviour
     {
         [SerializeField] private Transform target;
-        [SerializeField, Min(0.1f)] private float distance = 6f;
-        [SerializeField, Min(0.1f)] private float minDistance = 3f;
-        [SerializeField, Min(0.1f)] private float maxDistance = 10f;
-        [SerializeField] private float lookSensitivity = 0.18f;
-        [SerializeField] private float zoomSensitivity = 0.01f;
-        [SerializeField] private float minPitch = 15f;
-        [SerializeField] private float maxPitch = 65f;
-        [SerializeField, Min(0.01f)] private float smoothTime = 0.06f;
+        [SerializeField, Min(0.1f)] private float followDistance = 18f;
+        [SerializeField, Range(15f, 60f)] private float pitch = 35.264f;
+        [SerializeField] private float yaw = 45f;
+        [SerializeField, Min(1f)] private float zoom = 8.5f;
+        [SerializeField, Min(2f)] private float minZoom = 4f;
+        [SerializeField, Min(4f)] private float maxZoom = 15f;
+        [SerializeField, Min(0.01f)] private float smoothTime = 0.10f;
+        [SerializeField] private Vector3 focusOffset = new Vector3(0f, 0.9f, 0f);
 
-        private float yaw;
-        private float pitch = 35f;
         private Vector3 smoothVelocity;
+        private Camera controlledCamera;
 
         public void Initialize(Transform followTarget)
         {
             target = followTarget;
-            if (target != null)
-            {
-                yaw = target.eulerAngles.y;
-                transform.position = target.position + new Vector3(0f, 3f, -distance);
-                transform.LookAt(target.position + Vector3.up * 1.2f);
-            }
+            controlledCamera = GetComponent<Camera>();
+            if (controlledCamera == null) controlledCamera = Camera.main;
+            ConfigureCamera();
+            SnapToTarget();
+        }
+
+        private void Awake()
+        {
+            controlledCamera = GetComponent<Camera>();
+            if (controlledCamera == null) controlledCamera = Camera.main;
+            ConfigureCamera();
+        }
+
+        private void ConfigureCamera()
+        {
+            if (controlledCamera == null) return;
+            controlledCamera.orthographic = true;
+            controlledCamera.orthographicSize = Mathf.Clamp(zoom, minZoom, maxZoom);
         }
 
         private void LateUpdate()
         {
             if (target == null) return;
-            ReadOrbitInput();
+            ReadZoomInput();
 
             var rotation = Quaternion.Euler(pitch, yaw, 0f);
-            var focus = target.position + Vector3.up * 1.25f;
-            var desired = focus - rotation * Vector3.forward * distance;
-            transform.position = Vector3.SmoothDamp(transform.position, desired, ref smoothVelocity, smoothTime);
-            transform.rotation = Quaternion.Slerp(transform.rotation,
-                Quaternion.LookRotation(focus - transform.position), 1f - Mathf.Exp(-14f * Time.deltaTime));
+            var focus = target.position + focusOffset;
+            var desired = focus - rotation * Vector3.forward * followDistance;
+
+            transform.position = Vector3.SmoothDamp(
+                transform.position, desired, ref smoothVelocity, smoothTime);
+            transform.rotation = rotation;
         }
 
-        private void ReadOrbitInput()
+        private void SnapToTarget()
         {
-            if (Input.touchCount == 1 && Input.GetTouch(0).position.x > Screen.width * 0.5f)
+            if (target == null) return;
+            var rotation = Quaternion.Euler(pitch, yaw, 0f);
+            var focus = target.position + focusOffset;
+            transform.SetPositionAndRotation(
+                focus - rotation * Vector3.forward * followDistance, rotation);
+        }
+
+        private void ReadZoomInput()
+        {
+            if (controlledCamera == null) return;
+
+            if (Input.touchCount >= 2)
             {
-                var touch = Input.GetTouch(0);
-                if (touch.phase == TouchPhase.Moved)
-                {
-                    yaw += touch.deltaPosition.x * lookSensitivity;
-                    pitch = Mathf.Clamp(pitch - touch.deltaPosition.y * lookSensitivity, minPitch, maxPitch);
-                }
-            }
-            else if (Input.touchCount >= 2 && Input.GetTouch(0).position.x > Screen.width * 0.5f &&
-                     Input.GetTouch(1).position.x > Screen.width * 0.5f)
-            {
-                var a = Input.GetTouch(0);
-                var b = Input.GetTouch(1);
-                var previousA = a.position - a.deltaPosition;
-                var previousB = b.position - b.deltaPosition;
-                var previousGap = Vector2.Distance(previousA, previousB);
-                var currentGap = Vector2.Distance(a.position, b.position);
-                distance = Mathf.Clamp(distance - (currentGap - previousGap) * zoomSensitivity,
-                    minDistance, maxDistance);
+                var first = Input.GetTouch(0);
+                var second = Input.GetTouch(1);
+                var previousFirst = first.position - first.deltaPosition;
+                var previousSecond = second.position - second.deltaPosition;
+                var previousGap = Vector2.Distance(previousFirst, previousSecond);
+                var currentGap = Vector2.Distance(first.position, second.position);
+
+                if (previousGap > 0.01f)
+                    zoom = Mathf.Clamp(zoom * previousGap / Mathf.Max(currentGap, 0.01f),
+                        minZoom, maxZoom);
             }
             else
             {
-                if (Input.GetMouseButton(1))
-                {
-                    yaw += Input.GetAxis("Mouse X") * 3f;
-                    pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * 3f, minPitch, maxPitch);
-                }
-                distance = Mathf.Clamp(distance - Input.mouseScrollDelta.y * 0.5f, minDistance, maxDistance);
+                var wheel = Input.mouseScrollDelta.y;
+                if (Mathf.Abs(wheel) > 0.001f)
+                    zoom = Mathf.Clamp(zoom - wheel * 0.6f, minZoom, maxZoom);
             }
+
+            controlledCamera.orthographicSize = Mathf.Lerp(
+                controlledCamera.orthographicSize, zoom, 1f - Mathf.Exp(-12f * Time.deltaTime));
         }
     }
 }
