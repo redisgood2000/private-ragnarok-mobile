@@ -1,7 +1,9 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Linq;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 
 public static class RagnarokContentPatchBuildEntryPoint
@@ -19,6 +21,7 @@ public static class RagnarokContentPatchBuildEntryPoint
         if (!Directory.Exists(ContentRoot))
             Directory.CreateDirectory(ContentRoot);
         AssetDatabase.Refresh();
+        GenerateCharacterActorPrefab();
 
         // The town is generated procedurally by the client. Bake that same original
         // environment into a prefab automatically so a patch can be published even
@@ -82,6 +85,78 @@ public static class RagnarokContentPatchBuildEntryPoint
         File.WriteAllText(Path.Combine(output, "patch-sha256.txt"), hash + Environment.NewLine);
         File.WriteAllText(Path.Combine(output, "patch-bundle-name.txt"), BundleName + Environment.NewLine);
         Debug.Log("Android content patch built: " + bundlePath + " SHA256=" + hash);
+    }
+
+
+    /// <summary>
+    /// Converts the original chibi FBX in RemoteContent into the CharacterActor
+    /// prefab consumed by WorldBootstrap. Keeps the source FBX and animation clip
+    /// inside the same AssetBundle so the prefab has no external dependencies.
+    /// </summary>
+    private static void GenerateCharacterActorPrefab()
+    {
+        const string characterFolder = ContentRoot + "/Characters";
+        const string modelPath = characterFolder + "/Cute_Ragnarok_Inspired_Chibi_Swordsman.fbx";
+        const string prefabPath = characterFolder + "/CharacterActor.prefab";
+        const string controllerPath = characterFolder + "/CharacterActor.controller";
+
+        var modelImporter = AssetImporter.GetAtPath(modelPath) as ModelImporter;
+        if (modelImporter == null)
+        {
+            Debug.LogWarning("No chibi swordsman FBX found at " + modelPath + "; keeping current player visual.");
+            return;
+        }
+
+        modelImporter.animationType = ModelImporterAnimationType.Generic;
+        modelImporter.importAnimation = true;
+        modelImporter.SaveAndReimport();
+        AssetDatabase.Refresh();
+
+        var model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+        if (model == null)
+            throw new InvalidOperationException("Chibi swordsman FBX could not be imported: " + modelPath);
+
+        var clips = AssetDatabase.LoadAllAssetsAtPath(modelPath)
+            .OfType<AnimationClip>()
+            .Where(clip => clip != null && !clip.name.StartsWith("__", StringComparison.Ordinal))
+            .ToArray();
+
+        RuntimeAnimatorController runtimeController = null;
+        if (clips.Length > 0)
+        {
+            var oldController = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (oldController != null) AssetDatabase.DeleteAsset(controllerPath);
+            var controller = AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
+            var state = controller.layers[0].stateMachine.AddState("Idle");
+            state.motion = clips[0];
+            controller.layers[0].stateMachine.defaultState = state;
+            runtimeController = controller;
+        }
+
+        var instance = PrefabUtility.InstantiatePrefab(model) as GameObject;
+        if (instance == null)
+            throw new InvalidOperationException("Unity could not instantiate the chibi swordsman FBX.");
+        try
+        {
+            instance.name = "CharacterActor";
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.identity;
+            // The Blender source is approximately 3 m tall; scale it to fit the
+            // existing 1.8 m player CharacterController.
+            instance.transform.localScale = Vector3.one * 0.65f;
+            var animator = instance.GetComponent<Animator>();
+            if (animator == null) animator = instance.AddComponent<Animator>();
+            animator.applyRootMotion = false;
+            if (runtimeController != null) animator.runtimeAnimatorController = runtimeController;
+            PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(instance);
+        }
+        AssetDatabase.SaveAssets();
+        Debug.Log("Generated patched CharacterActor prefab: " + prefabPath +
+                  " (animation clips: " + clips.Length + ")");
     }
 
     private static void GenerateWorldRootPrefab(string prefabPath)
