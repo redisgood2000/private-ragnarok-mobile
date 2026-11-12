@@ -44,3 +44,31 @@ IMPORTANT
   content patch. Asset-only changes do not need a new APK.
 - Do not put C# scripts, native libraries, credentials, or executable code here.
   Those require an APK build.
+
+SPRITE ID REFERENCE CATALOG
+The Ai4rei RagnarokOnline Job Class & NPC Sprite List is used as a metadata
+reference only:
+  https://nn.ai4rei.net/dev/npclist/?qq=8
+
+In the Unity Editor run:
+  Private Ragnarok > Create Reference Sprite Catalog
+
+This creates:
+  Assets/Resources/PrivateRagnarok/RagnarokSpriteCatalog.asset
+
+The initial catalog contains the 40 names/IDs shown on the referenced page
+(IDs 610–649). Entries contain names and IDs only; directional Sprite slots are
+empty. To display a character, assign eight authorized/imported Unity Sprite
+assets in clockwise order (south, south-west, west, north-west, north,
+north-east, east, south-east), or assign a single sprite. An optional Animator
+Controller can provide idle/walk/attack animation states.
+
+The player bootstrap checks ID 635 (4_M_SWORDMAN) and uses the sprite actor only
+when that catalog entry has at least one visual asset. Otherwise it safely
+keeps the existing procedural placeholder. A remote CharacterActor prefab
+continues to take priority.
+
+The reference site states that Ragnarok-related graphics are copyrighted by
+Gravity Co., Ltd. and Lee Myoungjin. The catalog tool copies metadata only;
+it does not scrape, extract, or redistribute website images or game graphics.
+Only add art that you own or are licensed to use.
