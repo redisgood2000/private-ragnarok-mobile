@@ -8,7 +8,7 @@ on:
       - ".github/workflows/generate-blender-character.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   generate:
@@ -34,6 +34,26 @@ jobs:
           test -s build/Cute_Ragnarok_Inspired_Chibi_Swordsman.blend
           test -s build/Cute_Ragnarok_Inspired_Chibi_Swordsman.fbx
           ls -lh build/
+
+      - name: Add FBX model to Unity remote resource package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p client/Unity/Assets/RemoteContent/Characters
+          install -m 0644 build/Cute_Ragnarok_Inspired_Chibi_Swordsman.fbx \
+            client/Unity/Assets/RemoteContent/Characters/Cute_Ragnarok_Inspired_Chibi_Swordsman.fbx
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add client/Unity/Assets/RemoteContent/Characters/Cute_Ragnarok_Inspired_Chibi_Swordsman.fbx
+          if ! git diff --cached --quiet; then
+            git commit -m "Add chibi swordsman to remote character resources"
+            git push
+          fi
+
+      - name: Trigger Android resource package build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run unity-content-patch.yml --ref main
 
       - name: Upload character assets
         uses: actions/upload-artifact@v4
