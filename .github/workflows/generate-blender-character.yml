@@ -1,0 +1,46 @@
+name: Generate Blender Chibi Character
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "tools/blender/create_chibi_swordsman.py"
+      - ".github/workflows/generate-blender-character.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+
+      - name: Generate native Blender and Unity FBX assets
+        run: |
+          mkdir -p build
+          OUTPUT_DIR="$PWD/build" blender --background --factory-startup --python tools/blender/create_chibi_swordsman.py
+
+      - name: Verify generated files
+        run: |
+          test -s build/Cute_Ragnarok_Inspired_Chibi_Swordsman.blend
+          test -s build/Cute_Ragnarok_Inspired_Chibi_Swordsman.fbx
+          ls -lh build/
+
+      - name: Upload character assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cute-Chibi-Swordsman-Blender-and-Unity
+          path: |
+            build/Cute_Ragnarok_Inspired_Chibi_Swordsman.blend
+            build/Cute_Ragnarok_Inspired_Chibi_Swordsman.fbx
+          if-no-files-found: error
+          retention-days: 30
