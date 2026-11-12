@@ -103,24 +103,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BUNDLE_B64="$(base64 -w0 client/Unity/Build/ContentPatch/worldcontent)"
-          EXISTING="$(gh api "repos/${GITHUB_REPOSITORY}/contents/update/worldcontent" 2>/dev/null || true)"
-          if [ -n "$EXISTING" ]; then
-            FILE_SHA="$(printf '%s' "$EXISTING" | jq -r .sha)"
-            jq -n \
-              --arg message "Publish Android world content bundle" \
-              --arg branch "main" \
-              --arg sha "$FILE_SHA" \
-              --arg content "$BUNDLE_B64" \
-              '{message:$message, branch:$branch, sha:$sha, content:$content}' > /tmp/worldcontent-payload.json
-          else
-            jq -n \
-              --arg message "Publish Android world content bundle" \
-              --arg branch "main" \
-              --arg content "$BUNDLE_B64" \
-              '{message:$message, branch:$branch, content:$content}' > /tmp/worldcontent-payload.json
-          fi
-          # Pass the JSON body via stdin/file, not argv: the base64 bundle is large.
+          FILE_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/contents/update/worldcontent" --jq .sha)"
+          export FILE_SHA
+          python3 - <<'PY'
+          import base64, json, os
+          bundle_path = "client/Unity/Build/ContentPatch/worldcontent"
+          with open(bundle_path, "rb") as source:
+              encoded = base64.b64encode(source.read()).decode("ascii")
+          payload = {
+              "message": "Publish Android world content bundle",
+              "branch": "main",
+              "sha": os.environ["FILE_SHA"],
+              "content": encoded,
+          }
+          with open("/tmp/worldcontent-payload.json", "w", encoding="utf-8") as target:
+              json.dump(payload, target, separators=(",", ":"))
+          PY
           gh api "repos/${GITHUB_REPOSITORY}/contents/update/worldcontent" \
             -X PUT \
             --input /tmp/worldcontent-payload.json
