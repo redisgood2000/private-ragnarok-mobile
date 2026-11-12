@@ -8,6 +8,8 @@ on:
       - "client/Unity/Assets/RemoteContent/**"
       - "client/Unity/Assets/PrivateRagnarok/Scripts/World/WorldBootstrap.cs"
       - "client/Unity/Assets/Editor/RagnarokContentPatchBuildEntryPoint.cs"
+      - "client/Unity/Assets/Editor/RagnarokGrfImporterWindow.cs"
+      - "client/Unity/Assets/packages.config"
 
 permissions:
   contents: write
@@ -51,7 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           test -d client/Unity/Assets/Packages
-          for assembly in Microsoft.AspNetCore.Connections.Abstractions Microsoft.Bcl.TimeProvider Microsoft.Bcl.AsyncInterfaces Microsoft.Extensions.Features Microsoft.Extensions.DependencyInjection Microsoft.Extensions.DependencyInjection.Abstractions Microsoft.Extensions.Logging Microsoft.Extensions.Logging.Abstractions Microsoft.Extensions.Options Microsoft.Extensions.Primitives System.Buffers System.Diagnostics.DiagnosticSource System.IO.Pipelines System.Memory System.Runtime.CompilerServices.Unsafe System.Text.Json System.Text.Encodings.Web System.Threading.Channels System.Threading.Tasks.Extensions; do
+          for assembly in GRF Ionic.Zlib.Core Microsoft.AspNetCore.Connections.Abstractions Microsoft.Bcl.TimeProvider Microsoft.Bcl.AsyncInterfaces Microsoft.Extensions.Features Microsoft.Extensions.DependencyInjection Microsoft.Extensions.DependencyInjection.Abstractions Microsoft.Extensions.Logging Microsoft.Extensions.Logging.Abstractions Microsoft.Extensions.Options Microsoft.Extensions.Primitives System.Buffers System.Diagnostics.DiagnosticSource System.IO.Pipelines System.Memory System.Runtime.CompilerServices.Unsafe System.Text.Json System.Text.Encodings.Web System.Threading.Channels System.Threading.Tasks.Extensions; do
             if ! find client/Unity/Assets/Packages -type f -name "${assembly}.dll" -print -quit | grep -q .; then
               echo "::error::NuGet restore did not produce ${assembly}.dll"
               exit 1
