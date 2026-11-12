@@ -42,11 +42,15 @@ public static class RagnarokSpriteCatalogCreator
         var entries = new List<RagnarokSpriteDefinition>(names.Length);
         for (var i = 0; i < names.Length; i++)
         {
-            var isJob = i >= 22 && i <= 37;
+            var name = names[i];
+            var isJob = name.Contains("GUNSLINGER") || name.Contains("ARCHER") ||
+                name.Contains("SWORDMAN") || name.Contains("NINJA") ||
+                name.Contains("ACOLYTE") || name.Contains("GENETIC") ||
+                name.Contains("TAEKWON");
             entries.Add(new RagnarokSpriteDefinition
             {
                 id = 610 + i,
-                spriteName = names[i],
+                spriteName = name,
                 kind = isJob ? RagnarokSpriteKind.JobClass : RagnarokSpriteKind.Npc,
                 directionalSprites = new Sprite[8]
             });
