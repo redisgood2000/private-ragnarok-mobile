@@ -58,6 +58,7 @@ namespace PrivateRagnarok.Client
                 BuildLighting();
             }
             var player = BuildPlayer();
+            BuildPrototypeMonsters();
             BuildHudAnchor();
             var hudObject = new GameObject("Character Status HUD");
             hudObject.transform.SetParent(transform, false);
@@ -268,6 +269,29 @@ namespace PrivateRagnarok.Client
             movement.CameraTransform = cameraObject.transform;
             network.SetMovementCamera(cameraObject.transform);
             return player;
+        }
+
+
+        private void BuildPrototypeMonsters()
+        {
+            var shader = worldShader != null ? worldShader : Resources.Load<Shader>("PrivateRagnarok/World");
+            if (shader == null)
+                throw new System.InvalidOperationException("Monster shader reference is missing.");
+
+            SpawnSlime("Meadow Slime A", new Vector3(-6.5f, 0.05f, 15.5f),
+                new Color(0.20f, 0.72f, 0.83f), 1.05f, shader);
+            SpawnSlime("Meadow Slime B", new Vector3(7.0f, 0.05f, 19.0f),
+                new Color(0.43f, 0.76f, 0.31f), 0.88f, shader);
+            SpawnSlime("Meadow Slime C", new Vector3(-9.0f, 0.05f, 25.0f),
+                new Color(0.66f, 0.43f, 0.82f), 1.18f, shader);
+        }
+
+        private void SpawnSlime(string monsterName, Vector3 position, Color color, float size, Shader shader)
+        {
+            var monster = new GameObject(monsterName);
+            monster.transform.SetParent(transform, false);
+            monster.transform.position = position;
+            monster.AddComponent<MeadowSlimeVisual>().Initialize(shader, color, size);
         }
 
         private void BuildHudAnchor()
