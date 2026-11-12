@@ -161,6 +161,7 @@ namespace PrivateRagnarok.Client
             if (progressCanvas != null) Destroy(progressCanvas.gameObject);
 #endif
             completed?.Invoke(prefab);
+            yield break; // Keep this iterator valid when UNITY_ANDROID is not defined in Editor compilation.
         }
 
         public T LoadAsset<T>(string assetName) where T : UnityEngine.Object
