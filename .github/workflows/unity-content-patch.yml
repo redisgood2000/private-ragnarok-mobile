@@ -10,6 +10,7 @@ on:
       - "client/Unity/Assets/Editor/RagnarokContentPatchBuildEntryPoint.cs"
       - "client/Unity/Assets/Editor/RagnarokGrfImporterWindow.cs"
       - "client/Unity/Assets/packages.config"
+      - ".github/workflows/unity-content-patch.yml"
 
 permissions:
   contents: write
