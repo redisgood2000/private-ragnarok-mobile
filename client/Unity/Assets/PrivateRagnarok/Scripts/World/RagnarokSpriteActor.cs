@@ -46,9 +46,13 @@ namespace PrivateRagnarok.Client
                 toCamera.y = 0f;
                 if (toCamera.sqrMagnitude > 0.0001f)
                 {
-                    var angle = Vector3.SignedAngle(transform.forward, toCamera.normalized, Vector3.up);
+                    // Choose the directional frame from the character's heading relative
+                    // to the camera, then billboard the flat sprite toward that camera.
+                    var heading = transform.parent != null ? transform.parent.forward : transform.forward;
+                    var angle = Vector3.SignedAngle(heading, toCamera.normalized, Vector3.up);
                     direction = Mathf.RoundToInt(angle / 45f);
                     direction = (direction % 8 + 8) % 8;
+                    transform.rotation = Quaternion.LookRotation(toCamera.normalized, Vector3.up);
                 }
             }
             if (sprites.Length == 1)
