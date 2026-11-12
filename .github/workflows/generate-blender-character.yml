@@ -47,7 +47,21 @@ jobs:
           git add client/Unity/Assets/RemoteContent/Characters/Cute_Ragnarok_Inspired_Chibi_Swordsman.fbx
           if ! git diff --cached --quiet; then
             git commit -m "Add chibi swordsman to remote character resources"
-            git push
+            pushed=false
+            for attempt in 1 2 3 4 5; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                pushed=true
+                break
+              fi
+              echo "Push race on attempt $attempt; retrying after rebase."
+              sleep 3
+            done
+            if [ "$pushed" != true ]; then
+              echo "::error::Could not push the generated FBX after five rebase attempts."
+              exit 1
+            fi
           fi
 
       - name: Trigger Android resource package build
