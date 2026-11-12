@@ -1,19 +1,46 @@
-Private Ragnarok remote content patch assets
+Private Ragnarok remote content and GRF resources
 
-Put patchable Unity assets in this folder. The content patch build workflow packages
-these assets into an Android AssetBundle named "worldcontent".
+REMOTE CONTENT PATCHES
+Put patchable Unity assets in this folder. The content patch workflow packages
+these assets into the Android AssetBundle named "worldcontent".
 
-Required for a world replacement:
-- Include a prefab named WorldRoot (the asset name must be exactly WorldRoot).
-- The prefab should contain the full environment you want instantiated in the demo.
-- Materials and textures should be included as dependencies by Unity's AssetBundle build.
-- Keep all shaders/materials compatible with the Android graphics pipeline and test on device.
+Required world asset:
+- A prefab named exactly WorldRoot. If absent, the patch build generates the
+  original procedural town as WorldRoot.
+- Optional character replacement: add a prefab named exactly CharacterActor.
+  The Android client loads it from the same AssetBundle and uses it instead of
+  the procedural placeholder. Keep the root transform at the feet/ground plane.
+  The player CharacterController remains on the player root; child colliders are
+  removed when the prefab is instantiated.
 
-The patch client verifies SHA-256 before loading the bundle. If the manifest, download,
-hash, bundle, or prefab is invalid, the game falls back to the built-in prototype.
+GRF IMPORT
+In the Unity Editor open:
+  Private Ragnarok > Import GRF Resources
 
-Do not put C# scripts, native libraries, Android plugins, credentials, or executable code here.
-Those require an APK build and are not supported as remote patches.
+Choose a locally stored data.grf or rdata.grf, then use the path filter to narrow
+the archive (for example "texture/" or "sprite/"). Extract matching resources
+into Assets/RemoteContent/GRFImport/<archive-name>/.
 
+Unity-importable formats:
+- BMP, TGA, PNG, JPG/JPEG
+- WAV, MP3, OGG
 
-The original procedural town is automatically baked into WorldRoot.prefab during the content patch build. Published bundles are stored at update/worldcontent and served from raw.githubusercontent.com; the manifest is enabled only after the bundle commit succeeds.
+Preserved as raw source for a later converter:
+- SPR, ACT, PAL
+- RSW, GND, GAT, RSM, STR
+
+The importer currently uses the MIT-licensed GRF 0.3.1 reader. It supports GRF
+versions 0x102, 0x103 and 0x200. It does not support GRF 0x300 or LZMA-specific
+archive variants. The importer has per-file and per-batch extraction limits.
+
+IMPORTANT
+- The original GRF archives stay on your PC and are never uploaded by the importer.
+- Do not commit or publish proprietary Ragnarok assets unless you have permission
+  to redistribute them. Keep extracted assets local/private where required.
+- Raw SPR/ACT/map/model source files are not automatically rendered by Unity.
+  They need format-specific converters before they can become playable assets.
+- To replace the player, create a Unity prefab named CharacterActor using the
+  converted/licensed resources, then include it in this folder and publish a
+  content patch. Asset-only changes do not need a new APK.
+- Do not put C# scripts, native libraries, credentials, or executable code here.
+  Those require an APK build.
