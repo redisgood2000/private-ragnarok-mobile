@@ -14,11 +14,11 @@ namespace PrivateRagnarok.Client
         [SerializeField, Min(0.1f)] private float followDistance = 18f;
         [SerializeField, Range(15f, 60f)] private float pitch = 35.264f;
         [SerializeField] private float yaw = 45f;
-        // 5.8 frames the player at roughly 40-50% of screen height, depending on aspect ratio.
-        // Pinch zoom remains available, with a tighter minimum for close character inspection.
-        [SerializeField, Min(1f)] private float zoom = 5.8f;
-        [SerializeField, Min(2f)] private float minZoom = 3.2f;
-        [SerializeField, Min(4f)] private float maxZoom = 12f;
+        // Tighter isometric framing makes the full-body player clearly readable on mobile.
+        // Pinch zoom remains available for close inspection and wider exploration.
+        [SerializeField, Min(1f)] private float zoom = 4.2f;
+        [SerializeField, Min(2f)] private float minZoom = 2.8f;
+        [SerializeField, Min(4f)] private float maxZoom = 10f;
         [SerializeField, Min(0.01f)] private float smoothTime = 0.10f;
         [SerializeField] private Vector3 focusOffset = new Vector3(0f, 0.9f, 0f);
 
