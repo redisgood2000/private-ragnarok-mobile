@@ -226,9 +226,23 @@ namespace PrivateRagnarok.Client
             }
             else
             {
-                var actorVisual = player.AddComponent<CharacterActorVisual>();
-                var actorShader = worldShader != null ? worldShader : Resources.Load<Shader>("PrivateRagnarok/World");
-                actorVisual.Initialize(actorShader);
+                // Prefer a catalog-backed licensed/imported sprite set when one is assigned.
+                // The catalog is metadata-only until sprite assets are supplied.
+                var catalog = Resources.Load<RagnarokSpriteCatalog>("PrivateRagnarok/RagnarokSpriteCatalog");
+                var swordman = catalog != null ? catalog.FindById(635) : null;
+                if (swordman != null && swordman.HasVisuals)
+                {
+                    var spriteObject = new GameObject("Ragnarok Sprite Actor");
+                    spriteObject.transform.SetParent(player.transform, false);
+                    spriteObject.transform.localPosition = new Vector3(0f, 0.05f, 0f);
+                    spriteObject.AddComponent<RagnarokSpriteActor>().Initialize(swordman);
+                }
+                else
+                {
+                    var actorVisual = player.AddComponent<CharacterActorVisual>();
+                    var actorShader = worldShader != null ? worldShader : Resources.Load<Shader>("PrivateRagnarok/World");
+                    actorVisual.Initialize(actorShader);
+                }
             }
             var controller = player.AddComponent<CharacterController>();
             controller.height = 1.8f;
