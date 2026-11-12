@@ -260,7 +260,7 @@ namespace PrivateRagnarok.Client
             cameraObject.transform.SetParent(transform, false);
             var camera = cameraObject.AddComponent<Camera>();
             camera.orthographic = true;
-            camera.orthographicSize = 8.5f;
+            camera.orthographicSize = 5.8f;
             camera.nearClipPlane = 0.1f;
             camera.farClipPlane = 250f;
             cameraObject.AddComponent<AudioListener>();
