@@ -15,7 +15,9 @@ permissions:
   contents: write
 
 concurrency:
-  group: private-ragnarok-publish-${{ github.ref }}
+  # Keep content publishing independent from APK builds so one queued workflow
+  # cannot replace/cancel the other in the shared GitHub concurrency group.
+  group: private-ragnarok-content-patch-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
