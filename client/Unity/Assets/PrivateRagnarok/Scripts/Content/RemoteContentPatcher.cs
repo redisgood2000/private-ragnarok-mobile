@@ -140,7 +140,8 @@ namespace PrivateRagnarok.Client
                 manifest.patchSha256.Length == 64 &&
                 Uri.TryCreate(manifest.patchBundleUrl, UriKind.Absolute, out uri) &&
                 uri.Scheme == Uri.UriSchemeHttps &&
-                string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase) &&
+                (string.Equals(uri.Host, "raw.githubusercontent.com", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase)) &&
                 Path.GetFileName(manifest.patchBundleName) == manifest.patchBundleName;
         }
 
