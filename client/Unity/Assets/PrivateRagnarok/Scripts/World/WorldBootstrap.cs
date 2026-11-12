@@ -17,9 +17,21 @@ namespace PrivateRagnarok.Client
 
         private Material groundMat, pathMat, wallMat, roofMat, woodMat, stoneMat, accentMat, playerMat;
 
+        private RemoteContentPatcher remoteContentPatcher;
+
         private void Start()
         {
-            if (buildOnStart) BuildWorld();
+            if (!buildOnStart) return;
+
+            // Load the remote content bundle before constructing the world.
+            // In the Unity Editor this coroutine falls back to built-in content.
+            remoteContentPatcher = GetComponent<RemoteContentPatcher>();
+            if (remoteContentPatcher == null)
+                remoteContentPatcher = gameObject.AddComponent<RemoteContentPatcher>();
+
+            StartCoroutine(remoteContentPatcher.PrepareWorldContent(
+                prefab => BuildWorld(prefab),
+                message => Debug.Log("[Private Ragnarok] " + message)));
         }
 
         [ContextMenu("Build Prototype World")]
@@ -199,9 +211,24 @@ namespace PrivateRagnarok.Client
             var player = new GameObject(prototypePlayerName);
             player.transform.SetParent(transform, false);
             player.transform.position = playerSpawn;
-            var actorVisual = player.AddComponent<CharacterActorVisual>();
-            var actorShader = worldShader != null ? worldShader : Resources.Load<Shader>("PrivateRagnarok/World");
-            actorVisual.Initialize(actorShader);
+            // A patched CharacterActor prefab can replace the procedural placeholder
+            // without changing the APK. Its asset name must be exactly CharacterActor.
+            var patchedActor = remoteContentPatcher != null
+                ? remoteContentPatcher.LoadAsset<GameObject>("CharacterActor")
+                : null;
+            if (patchedActor != null)
+            {
+                var visual = Instantiate(patchedActor, player.transform, false);
+                visual.name = "Patched Character Actor";
+                foreach (var childCollider in visual.GetComponentsInChildren<Collider>(true))
+                    Destroy(childCollider);
+            }
+            else
+            {
+                var actorVisual = player.AddComponent<CharacterActorVisual>();
+                var actorShader = worldShader != null ? worldShader : Resources.Load<Shader>("PrivateRagnarok/World");
+                actorVisual.Initialize(actorShader);
+            }
             var controller = player.AddComponent<CharacterController>();
             controller.height = 1.8f;
             controller.radius = 0.38f;
