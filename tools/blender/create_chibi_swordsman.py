@@ -94,7 +94,7 @@ for side,x,upper,fore in [("L",-.58,"upper_arm.L","forearm.L"),("R",.58,"upper_a
     uv("Shoulder puff "+side,(x,0,1.75),(.23,.24,.24),blue2,"spine")
     rod("Sleeve "+side,(x,0,1.72),(x*1.20,0,1.43),.16,blue,upper)
     rod("Forearm "+side,(x*1.20,0,1.43),(x*1.30,-.01,1.17),.115,skin,fore)
-    uv("Glove "+side,(x*1.30,-.025,1.12),(.15,.16,.15),leather,fore)
+    uv("Detailed palm "+side,(x*1.30,-.055,1.12),(.145,.125,.135),skin,fore)
 # head, ears, face
 uv("Large cute head",(0,-.015,2.43),(.64,.53,.65),skin,"head",32,24)
 for side,x in [("L",-.62),("R",.62)]:
@@ -121,6 +121,48 @@ for p,co in zip(sp.bezier_points,[(-.09,-.535,2.25),(0,-.552,2.22),(.09,-.535,2.
 sm=bpy.data.objects.new("Friendly smile",curve); bpy.context.collection.objects.link(sm); curve.materials.append(dark)
 bpy.ops.object.select_all(action="DESELECT"); sm.select_set(True); bpy.context.view_layer.objects.active=sm
 bpy.ops.object.convert(target="MESH"); sm=bpy.context.object; bind(sm,"head")
+# Facial expression: sculpted, clearly readable eyebrows with tapered-looking ends.
+for side,x in [("L",-.25),("R",.25)]:
+    brow=uv("Expressive eyebrow "+side,(x,-.535,2.685),(.155,.035,.045),hairlight,"head",20,12)
+    brow.rotation_euler[1]=math.radians(8 if side=="L" else -8)
+    # Subtle lower eyelid gives the large eyes a more finished, animated look.
+    lid=uv("Lower eyelid rim "+side,(x,-.535,2.335),(.145,.025,.025),skin2,"head",20,12)
+
+# Individual toes emerging from the front of the boots; each has a small nail plate.
+for side,x,bone in [("L",-.23,"shin.L"),("R",.23,"shin.R")]:
+    for i,offset in enumerate([-.105,-.035,.035,.105]):
+        tx=x+offset
+        length=.078 if i in (0,3) else .088
+        uv("Toe %s %d"%(side,i+1),(tx,-.265,.105),(length,.105,.060),skin,bone,20,12)
+        nail=uv("Toenail %s %d"%(side,i+1),(tx,-.354,.119),(length*.48,.014,.024),white,bone,16,10)
+        nail.rotation_euler[1]=math.radians((i-1.5)*3)
+    # Leather instep straps frame the exposed toes instead of hiding them.
+    rod("Sandal strap "+side,(x-.17,-.22,.205),(x+.17,-.22,.205),.035,leather2,bone)
+
+# Detailed fingers and nails. The right hand is deliberately wrapped around the
+# vertical sword grip; the four fingers cross its front and the thumb closes over it.
+# Right palm is positioned around the handle at x=.80, z=1.10.
+for i,z in enumerate([1.045,1.085,1.125,1.165]):
+    finger=uv("Sword hand curled finger %d"%(i+1),(.785,-.158,z),(.105,.060,.024),skin,"forearm.R",20,12)
+    nail=uv("Sword hand fingernail %d"%(i+1),(.795,-.211,z+.002),(.034,.012,.014),white,"forearm.R",16,10)
+    nail.rotation_euler[1]=math.radians(-8)
+# Thumb crosses diagonally over the upper fingers and visibly clamps the hilt.
+thumb=uv("Sword hand opposing thumb",(.865,-.165,1.185),(.095,.060,.035),skin,"forearm.R",20,12)
+thumb.rotation_euler[1]=math.radians(-32)
+uv("Sword thumb nail",(.885,-.218,1.192),(.032,.012,.015),white,"forearm.R",16,10)
+# Small knuckle pads create a readable closed fist silhouette.
+for i,z in enumerate([1.045,1.085,1.125,1.165]):
+    uv("Sword grip knuckle %d"%(i+1),(.705,-.145,z),(.027,.045,.025),skin,"forearm.R",16,10)
+
+# Left hand: relaxed separated fingers with visible nail plates.
+for i,z in enumerate([1.045,1.085,1.125,1.165]):
+    x=.0 # overwritten below for left-hand placement
+    fx=-.754-(i-1.5)*.025
+    finger=uv("Left hand finger %d"%(i+1),(fx,-.155,z),(.030,.060,.070),skin,"forearm.L",18,12)
+    nail=uv("Left hand fingernail %d"%(i+1),(fx,-.211,z-.005),(.018,.012,.027),white,"forearm.L",16,10)
+uv("Left hand thumb",(-.855,-.15,1.185),(.045,.06,.085),skin,"forearm.L",18,12)
+uv("Left thumb nail",(-.884,-.205,1.19),(.018,.012,.03),white,"forearm.L",16,10)
+
 # headband and center gem
 uv("Headband",(0,-.05,2.91),(.62,.51,.105),gold,"head")
 uv("Headband jewel",(0,-.55,2.91),(.10,.045,.10),green,"head")
