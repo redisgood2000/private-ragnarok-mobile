@@ -196,6 +196,54 @@ if rig.animation_data and rig.animation_data.action:
     rig.animation_data.action.name="Idle | Gentle breathing"
     for fc in rig.animation_data.action.fcurves:
         for kp in fc.keyframe_points: kp.interpolation="BEZIER"
+idle_action=rig.animation_data.action
+
+# Separate gameplay clips. Each clip is keyed on the same compact humanoid rig.
+# FBX export below bakes all actions so Unity can select Idle, Walk and Attack.
+def make_action(name, frames):
+    action=bpy.data.actions.new(name)
+    rig.animation_data.action=action
+    for frame, pose in frames:
+        key_pose(frame, pose)
+    for fc in action.fcurves:
+        for kp in fc.keyframe_points:
+            kp.interpolation="BEZIER"
+    return action
+
+walk=make_action("Walk | Loop",[
+ (1, {"thigh.L":(0.42,0,0),"thigh.R":(-0.42,0,0),
+      "shin.L":(-0.18,0,0),"shin.R":(0.18,0,0),
+      "upper_arm.L":(-0.20,0,-0.05),"upper_arm.R":(0.20,0,0.05),
+      "spine":(0.025,0,0)}),
+ (7, {"thigh.L":(0,0,0),"thigh.R":(0,0,0),
+      "shin.L":(0.08,0,0),"shin.R":(0.08,0,0),
+      "upper_arm.L":(0,0,-0.05),"upper_arm.R":(0,0,0.05),
+      "spine":(-0.015,0,0)}),
+ (13, {"thigh.L":(-0.42,0,0),"thigh.R":(0.42,0,0),
+       "shin.L":(0.18,0,0),"shin.R":(-0.18,0,0),
+       "upper_arm.L":(0.20,0,-0.05),"upper_arm.R":(-0.20,0,0.05),
+       "spine":(0.025,0,0)}),
+ (19, {"thigh.L":(0,0,0),"thigh.R":(0,0,0),
+       "shin.L":(0.08,0,0),"shin.R":(0.08,0,0),
+       "upper_arm.L":(0,0,-0.05),"upper_arm.R":(0,0,0.05),
+       "spine":(-0.015,0,0)}),
+ (25, {"thigh.L":(0.42,0,0),"thigh.R":(-0.42,0,0),
+       "shin.L":(-0.18,0,0),"shin.R":(0.18,0,0),
+       "upper_arm.L":(-0.20,0,-0.05),"upper_arm.R":(0.20,0,0.05),
+       "spine":(0.025,0,0)}),
+])
+attack=make_action("Attack | Sword Slash",[
+ (1, {"spine":(0,0,0),"upper_arm.R":(0.05,0,-0.18),
+      "forearm.R":(0,0,0),"head":(0,0,0)}),
+ (5, {"spine":(-0.12,0,-0.08),"upper_arm.R":(-0.25,0,-0.35),
+      "forearm.R":(-0.10,0,0.10),"head":(0.08,0,0)}),
+ (9, {"spine":(0.10,0,0.10),"upper_arm.R":(0.45,0,-0.55),
+      "forearm.R":(0.25,0,0.25),"head":(-0.05,0,0)}),
+ (14, {"spine":(0,0,0),"upper_arm.R":(0.05,0,-0.18),
+       "forearm.R":(0,0,0),"head":(0,0,0)}),
+])
+# Return the saved Blender scene to the neutral idle pose before preview/export.
+rig.animation_data.action=idle_action
 # Save native blend with camera/light/stage for easy preview
 bpy.ops.object.select_all(action="DESELECT")
 rig.select_set(True); bpy.context.view_layer.objects.active=rig
