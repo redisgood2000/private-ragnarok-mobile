@@ -32,16 +32,39 @@ bones={
  "root":((0,0,0),(0,0,.72),None),
  "pelvis":((0,0,.72),(0,0,1.18),"root"),
  "spine":((0,0,1.18),(0,0,1.95),"pelvis"),
- "head":((0,0,1.95),(0,0,2.92),"spine"),
+ "neck":((0,0,1.82),(0,0,2.10),"spine"),
+ "head":((0,0,2.08),(0,0,2.92),"neck"),
+ "clavicle.L":((-.12,0,1.83),(-.42,0,1.78),"spine"),
+ "clavicle.R":((.12,0,1.83),(.42,0,1.78),"spine"),
  "upper_arm.L":((-.40,0,1.78),(-.72,0,1.42),"spine"),
  "forearm.L":((-.72,0,1.42),(-.78,-.01,1.12),"upper_arm.L"),
+ "hand.L":((-.78,-.01,1.12),(-.78,-.10,1.12),"forearm.L"),
  "upper_arm.R":((.40,0,1.78),(.72,0,1.42),"spine"),
  "forearm.R":((.72,0,1.42),(.78,-.01,1.12),"upper_arm.R"),
+ "hand.R":((.78,-.01,1.12),(.80,-.12,1.12),"forearm.R"),
  "thigh.L":((-.20,0,.90),(-.23,0,.53),"pelvis"),
  "shin.L":((-.23,0,.53),(-.24,-.01,.13),"thigh.L"),
+ "foot.L":((-.24,-.01,.13),(-.24,-.27,.10),"shin.L"),
  "thigh.R":((.20,0,.90),(.23,0,.53),"pelvis"),
  "shin.R":((.23,0,.53),(.24,-.01,.13),"thigh.R"),
+ "foot.R":((.24,-.01,.13),(.24,-.27,.10),"shin.R"),
 }
+for name,(h,t,parent) in bones.items():
+ b=arm_data.edit_bones.new(name); b.head=h; b.tail=t
+ if parent: b.parent=arm_data.edit_bones[parent]
+# Individual digit chains make the hand and foot rig usable for posing.
+for side, sign, hand_name, foot_name in [
+    ("L",-1,"hand.L","foot.L"),("R",1,"hand.R","foot.R")
+]:
+    for i,z in enumerate([1.045,1.085,1.125,1.165]):
+        x = sign*(.754 if side=="L" else .785)
+        h=(x,-.15,z)
+        t=(x + sign*.035,-.15,z)
+        bones[f"finger.{side}.{i+1:02d}"]=(h,t,hand_name)
+    bones[f"thumb.{side}"]=((sign*.80,-.15,1.16),(sign*.89,-.15,1.20),hand_name)
+    for i,offset in enumerate([-.105,-.035,.035,.105]):
+        x=sign*.23+offset
+        bones[f"toe.{side}.{i+1:02d}"]=((x,-.22,.11),(x,-.34,.105),foot_name)
 for name,(h,t,parent) in bones.items():
  b=arm_data.edit_bones.new(name); b.head=h; b.tail=t
  if parent: b.parent=arm_data.edit_bones[parent]
@@ -80,8 +103,8 @@ def rod(name,a,b,radius,material,bone,vertices=16):
 
 # Boots and legs
 for side,x,bone1,bone2 in [("L",-.23,"thigh.L","shin.L"),("R",.23,"thigh.R","shin.R")]:
-    uv("Rounded boot "+side,(x,-.015,.20),(.22,.31,.22),leather,bone2)
-    cube("Boot cuff "+side,(x,-.005,.39),(.32,.34,.18),gold,bone2,.07)
+    uv("Rounded boot "+side,(x,-.015,.20),(.22,.31,.22),leather,"foot."+side)
+    cube("Boot cuff "+side,(x,-.005,.39),(.32,.34,.18),gold,"foot."+side,.07)
     uv("Shorts leg "+side,(x,0,.77),(.22,.22,.30),blue,bone1)
 # torso, tunic, belt, collar
 uv("Tunic body",(0,0,1.52),(.48,.32,.53),blue,"spine")
@@ -94,7 +117,7 @@ for side,x,upper,fore in [("L",-.58,"upper_arm.L","forearm.L"),("R",.58,"upper_a
     uv("Shoulder puff "+side,(x,0,1.75),(.23,.24,.24),blue2,"spine")
     rod("Sleeve "+side,(x,0,1.72),(x*1.20,0,1.43),.16,blue,upper)
     rod("Forearm "+side,(x*1.20,0,1.43),(x*1.30,-.01,1.17),.115,skin,fore)
-    uv("Detailed palm "+side,(x*1.30,-.055,1.12),(.145,.125,.135),skin,fore)
+    uv("Detailed palm "+side,(x*1.30,-.055,1.12),(.145,.125,.135),skin,"hand."+side)
 # head, ears, face
 uv("Large cute head",(0,-.015,2.43),(.64,.53,.65),skin,"head",32,24)
 for side,x in [("L",-.62),("R",.62)]:
@@ -137,31 +160,31 @@ for side,x,bone in [("L",-.23,"shin.L"),("R",.23,"shin.R")]:
         nail=uv("Toenail %s %d"%(side,i+1),(tx,-.354,.119),(length*.48,.014,.024),white,bone,16,10)
         nail.rotation_euler[1]=math.radians((i-1.5)*3)
     # Leather instep straps frame the exposed toes instead of hiding them.
-    rod("Sandal strap "+side,(x-.17,-.22,.205),(x+.17,-.22,.205),.035,leather2,bone)
+    rod("Sandal strap "+side,(x-.17,-.22,.205),(x+.17,-.22,.205),.035,leather2,"foot."+side)
 
 # Detailed fingers and nails. The right hand is deliberately wrapped around the
 # vertical sword grip; the four fingers cross its front and the thumb closes over it.
 # Right palm is positioned around the handle at x=.80, z=1.10.
 for i,z in enumerate([1.045,1.085,1.125,1.165]):
-    finger=uv("Sword hand curled finger %d"%(i+1),(.785,-.158,z),(.105,.060,.024),skin,"forearm.R",20,12)
-    nail=uv("Sword hand fingernail %d"%(i+1),(.795,-.211,z+.002),(.034,.012,.014),white,"forearm.R",16,10)
+    finger=uv("Sword hand curled finger %d"%(i+1),(.785,-.158,z),(.105,.060,.024),skin,"finger.R.%02d"%(i+1),20,12)
+    nail=uv("Sword hand fingernail %d"%(i+1),(.795,-.211,z+.002),(.034,.012,.014),white,"finger.R.%02d"%(i+1),16,10)
     nail.rotation_euler[1]=math.radians(-8)
 # Thumb crosses diagonally over the upper fingers and visibly clamps the hilt.
-thumb=uv("Sword hand opposing thumb",(.865,-.165,1.185),(.095,.060,.035),skin,"forearm.R",20,12)
+thumb=uv("Sword hand opposing thumb",(.865,-.165,1.185),(.095,.060,.035),skin,"thumb.R",20,12)
 thumb.rotation_euler[1]=math.radians(-32)
-uv("Sword thumb nail",(.885,-.218,1.192),(.032,.012,.015),white,"forearm.R",16,10)
+uv("Sword thumb nail",(.885,-.218,1.192),(.032,.012,.015),white,"thumb.R",16,10)
 # Small knuckle pads create a readable closed fist silhouette.
 for i,z in enumerate([1.045,1.085,1.125,1.165]):
-    uv("Sword grip knuckle %d"%(i+1),(.705,-.145,z),(.027,.045,.025),skin,"forearm.R",16,10)
+    uv("Sword grip knuckle %d"%(i+1),(.705,-.145,z),(.027,.045,.025),skin,"hand.R",16,10)
 
 # Left hand: relaxed separated fingers with visible nail plates.
 for i,z in enumerate([1.045,1.085,1.125,1.165]):
     x=.0 # overwritten below for left-hand placement
     fx=-.754-(i-1.5)*.025
-    finger=uv("Left hand finger %d"%(i+1),(fx,-.155,z),(.030,.060,.070),skin,"forearm.L",18,12)
-    nail=uv("Left hand fingernail %d"%(i+1),(fx,-.211,z-.005),(.018,.012,.027),white,"forearm.L",16,10)
-uv("Left hand thumb",(-.855,-.15,1.185),(.045,.06,.085),skin,"forearm.L",18,12)
-uv("Left thumb nail",(-.884,-.205,1.19),(.018,.012,.03),white,"forearm.L",16,10)
+    finger=uv("Left hand finger %d"%(i+1),(fx,-.155,z),(.030,.060,.070),skin,"finger.L.%02d"%(i+1),18,12)
+    nail=uv("Left hand fingernail %d"%(i+1),(fx,-.211,z-.005),(.018,.012,.027),white,"finger.L.%02d"%(i+1),16,10)
+uv("Left hand thumb",(-.855,-.15,1.185),(.045,.06,.085),skin,"thumb.L",18,12)
+uv("Left thumb nail",(-.884,-.205,1.19),(.018,.012,.03),white,"thumb.L",16,10)
 
 # headband and center gem
 uv("Headband",(0,-.05,2.91),(.62,.51,.105),gold,"head")
