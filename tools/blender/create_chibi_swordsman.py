@@ -15,13 +15,13 @@ def mat(name, color, metallic=0.0, roughness=0.48):
     p.inputs["Metallic"].default_value=metallic; p.inputs["Roughness"].default_value=roughness
     return m
 skin=mat("Warm peach skin",(0.98,.66,.48)); skin2=mat("Ear blush",(1,.40,.39))
-hair=mat("Chestnut hair",(.20,.075,.035)); hairlight=mat("Hair highlights",(.38,.15,.065))
-blue=mat("Adventurer blue tunic",(.10,.31,.68)); blue2=mat("Tunic trim",(.35,.68,1))
-gold=mat("Warm gold",(.95,.62,.12),.55,.28); leather=mat("Boot leather",(.22,.085,.035))
-leather2=mat("Leather straps",(.42,.20,.08)); white=mat("Eye whites",(1,.96,.84))
+hair=mat("Lavender violet hair",(.38,.29,.58)); hairlight=mat("Lavender hair highlights",(.62,.48,.78))
+blue=mat("Deep espresso inner robe",(.105,.045,.035)); blue2=mat("Warm ivory coat",(.92,.79,.59))
+gold=mat("Amber gold cape",(.72,.34,.075),.22,.36); leather=mat("Dark brown boots and gloves",(.12,.055,.04))
+leather2=mat("Dark leather trim",(.24,.11,.07)); white=mat("Eye whites",(1,.96,.84))
 iris=mat("Deep sapphire eyes",(.015,.10,.30),.12,.2); pupil=mat("Pupils",(.008,.012,.025),.05,.12)
 metal=mat("Sword steel",(.63,.78,.90),.82,.22); dark=mat("Sword grip",(.12,.045,.025))
-red=mat("Scarf red",(.75,.055,.08)); green=mat("Tiny gem",(.04,.75,.38),.35,.2)
+red=mat("Ivory piping",(.96,.78,.48),.18,.32); green=mat("Silver clasp",(.72,.76,.80),.65,.25)
 
 # Armature: stylized proportions, simple deform rig.
 arm_data=bpy.data.armatures.new("Chibi Adventurer Rig")
@@ -98,33 +98,64 @@ def rod(name,a,b,radius,material,bone,vertices=16):
     o=bpy.context.object; o.rotation_mode="QUATERNION"; o.rotation_quaternion=d.to_track_quat("Z","Y")
     return finish(o,name,material,bone)
 
-# Boots and legs
-for side,x,bone1,bone2 in [("L",-.23,"thigh.L","shin.L"),("R",.23,"thigh.R","shin.R")]:
-    uv("Rounded boot "+side,(x,-.015,.20),(.22,.31,.22),leather,"foot."+side)
-    cube("Boot cuff "+side,(x,-.005,.39),(.32,.34,.18),gold,"foot."+side,.07)
-    uv("Shorts leg "+side,(x,0,.77),(.22,.22,.30),blue,bone1)
-# torso, tunic, belt, collar
-uv("Tunic body",(0,0,1.52),(.48,.32,.53),blue,"spine")
-uv("Tunic hem",(0,0,1.13),(.49,.33,.12),blue2,"pelvis")
-cube("Gold belt",(0,-.005,1.22),(.83,.12,.12),gold,"pelvis",.045)
-uv("Belt buckle",(0,-.13,1.22),(.12,.045,.12),gold,"pelvis")
-uv("Chest scarf",(0,-.28,1.83),(.28,.075,.16),red,"spine")
-# arms and gloves
+# Main character outfit: lavender-haired adventurer in a long ivory-and-amber coat.
+for side,x,bone1 in [("L",-.23,"thigh.L"),("R",.23,"thigh.R")]:
+    uv("Dark brown boot "+side,(x,-.035,.19),(.23,.32,.22),leather,"foot."+side)
+    uv("Lavender gray boot sole "+side,(x,-.065,.075),(.235,.33,.075),hairlight,"foot."+side)
+    uv("Boot toe cap "+side,(x,-.245,.19),(.18,.12,.095),leather2,"foot."+side)
+    uv("Dark robe trouser "+side,(x,0,.73),(.22,.23,.37),blue,bone1)
+uv("Dark brown inner tunic",(0,0,1.52),(.43,.30,.53),blue,"spine")
+uv("Dark waist sash",(0,-.012,1.20),(.39,.12,.11),leather,"pelvis")
+cube("Silver rectangular belt buckle",(0,-.145,1.20),(.20,.055,.16),green,"pelvis",.018)
+cube("Buckle dark inset",(0,-.178,1.20),(.115,.018,.085),leather,"pelvis",.008)
+def coat_panel(name,xo,xi,material,bone,y=-.235,zt=2.00,zb=.18):
+    v=[(xi,y,zt),(xo,y,zt-.08),(xo*1.28,y,zb),(xi*.78,y,zb+.08),
+       (xi,y+.065,zt),(xo,y+.065,zt-.08),(xo*1.28,y+.065,zb),(xi*.78,y+.065,zb+.08)]
+    faces=[(0,1,2,3),(7,6,5,4),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)]
+    me=bpy.data.meshes.new(name+" Mesh"); me.from_pydata(v,[],faces); me.materials.append(material); me.update()
+    ob=bpy.data.objects.new(name,me); bpy.context.collection.objects.link(ob)
+    bevel=ob.modifiers.new("Tailored soft edges","BEVEL"); bevel.width=.025; bevel.segments=3
+    ob.modifiers.new("Weighted normals","WEIGHTED_NORMAL"); bind(ob,bone)
+coat_panel("Long ivory coat left",-.38,-.035,blue2,"pelvis")
+coat_panel("Long ivory coat right",.38,.035,blue2,"pelvis")
+coat_panel("Amber lining left",-.48,-.34,leather2,"pelvis",-.16,1.45,.22)
+coat_panel("Amber lining right",.48,.34,leather2,"pelvis",-.16,1.45,.22)
 for side,x,upper,fore in [("L",-.58,"upper_arm.L","forearm.L"),("R",.58,"upper_arm.R","forearm.R")]:
-    uv("Shoulder puff "+side,(x,0,1.75),(.23,.24,.24),blue2,"spine")
-    rod("Sleeve "+side,(x,0,1.72),(x*1.20,0,1.43),.16,blue,upper)
-    rod("Forearm "+side,(x*1.20,0,1.43),(x*1.30,-.01,1.17),.115,skin,fore)
-    uv("Detailed palm "+side,(x*1.30,-.055,1.12),(.145,.125,.135),skin,"hand."+side)
+    rod("Ivory sleeve "+side,(x,0,1.72),(x*1.20,0,1.43),.17,blue2,upper)
+    rod("Amber sleeve cuff "+side,(x*1.20,0,1.43),(x*1.24,0,1.36),.145,gold,fore)
+    rod("Dark glove forearm "+side,(x*1.24,0,1.36),(x*1.30,-.01,1.17),.125,leather,fore)
+    uv("Dark gloved palm "+side,(x*1.30,-.055,1.12),(.15,.13,.14),leather,"hand."+side)
+# Wide amber shoulder cape, with ivory piping.
+v=[(-.43,.12,1.98),(.43,.12,1.98),(.84,.13,1.40),(-.84,.13,1.40),(-.43,.25,1.98),(.43,.25,1.98),(.84,.25,1.40),(-.84,.25,1.40)]
+faces=[(0,1,2,3),(7,6,5,4),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)]
+me=bpy.data.meshes.new("Amber cape mesh"); me.from_pydata(v,[],faces); me.materials.append(gold); me.update()
+cape=bpy.data.objects.new("Wide amber shoulder cape",me); bpy.context.collection.objects.link(cape)
+bev=cape.modifiers.new("Cape soft edge","BEVEL"); bev.width=.055; bev.segments=4
+cape.modifiers.new("Cape normals","WEIGHTED_NORMAL"); bind(cape,"spine")
+rod("Cape upper ivory piping",(-.44,-.01,1.95),(.44,-.01,1.95),.035,blue2,"spine")
+rod("Cape lower ivory piping",(-.82,-.005,1.42),(.82,-.005,1.42),.028,blue2,"spine")
+rod("Left coat gold piping",(-.39,-.285,1.95),(-.49,-.285,.22),.025,gold,"pelvis")
+rod("Right coat gold piping",(.39,-.285,1.95),(.49,-.285,.22),.025,gold,"pelvis")
+# High white collar and throat clasp.
+uv("Tall ivory collar front",(0,-.245,1.99),(.34,.13,.22),blue2,"spine")
+uv("Tall ivory collar back",(0,.17,2.00),(.35,.14,.22),blue2,"spine")
+cube("Collar left wing",(-.28,-.16,1.96),(.12,.20,.24),blue2,"spine",.045)
+cube("Collar right wing",(.28,-.16,1.96),(.12,.20,.24),blue2,"spine",.045)
+uv("Dark neck clasp",(0,-.375,1.86),(.13,.035,.07),leather,"spine")
+uv("Silver neck clasp",(0,-.414,1.86),(.045,.018,.04),green,"spine")
 # head, ears, face
 uv("Large cute head",(0,-.015,2.43),(.64,.53,.65),skin,"head",32,24)
 for side,x in [("L",-.62),("R",.62)]:
     uv("Ear "+side,(x,-.005,2.43),(.15,.13,.21),skin,"head")
     uv("Ear inner "+side,(x,-.115,2.43),(.075,.035,.12),skin2,"head")
 # hair cap and locks
-uv("Hair cap",(0,.015,2.83),(.67,.55,.40),hair,"head",32,20)
-for i,(x,z,s) in enumerate([(-.43,2.72,.25),(-.20,2.70,.24),(0,2.68,.25),(.22,2.70,.24),(.44,2.73,.22)]):
-    uv("Front fringe %02d"%i,(x,-.43,z),(s,.16,.30),hair if i%2 else hairlight,"head")
-uv("Back hair",(0,.34,2.49),(.57,.28,.53),hair,"head")
+uv("Lavender hair cap",(0,.015,2.83),(.67,.55,.40),hair,"head",32,20)
+for i,(x,z,w) in enumerate([(-.48,2.72,.22),(-.29,2.70,.25),(-.08,2.68,.27),(.17,2.70,.25),(.42,2.74,.22)]):
+    lock=uv("Swept lavender fringe %02d"%i,(x,-.435,z),(w,.17,.32),hair if i%2 else hairlight,"head")
+    lock.rotation_euler[1]=math.radians(-12 if x<0 else 12)
+for side,x in [("L",-.53),("R",.53)]:
+    uv("Long side hair lock "+side,(x,-.20,2.48),(.16,.20,.36),hair,"head")
+uv("Layered lavender back hair",(0,.34,2.49),(.59,.30,.56),hair,"head")
 # eyes oriented toward -Y, with eye whites, iris and highlights
 for side,x in [("L",-.25),("R",.25)]:
     uv("Eye white "+side,(x,-.492,2.48),(.155,.055,.19),white,"head")
@@ -183,19 +214,10 @@ for i,z in enumerate([1.045,1.085,1.125,1.165]):
 uv("Left hand thumb",(-.855,-.15,1.185),(.045,.06,.085),skin,"thumb.L",18,12)
 uv("Left thumb nail",(-.884,-.205,1.19),(.018,.012,.03),white,"thumb.L",16,10)
 
-# headband and center gem
-uv("Headband",(0,-.05,2.91),(.62,.51,.105),gold,"head")
-uv("Headband jewel",(0,-.55,2.91),(.10,.045,.10),green,"head")
-# shoulder armor
-for side,x in [("L",-.48),("R",.48)]:
-    uv("Gold shoulder pauldron "+side,(x,-.025,1.86),(.23,.25,.17),gold,"spine")
-# short sword in right hand (blade points up)
-rod("Sword grip",(.78,-.04,1.10),(.80,-.04,.82),.045,dark,"forearm.R")
-rod("Sword guard",(.66,-.045,1.09),(.94,-.045,1.09),.045,gold,"forearm.R")
-rod("Sword blade",(.80,-.045,1.12),(.80,-.045,1.80),.075,metal,"forearm.R",4)
-uv("Sword tip",(.80,-.045,1.82),(.075,.075,.10),metal,"forearm.R",12,8)
-# face the front (-Y) with a subtle three-quarter turn
-rig.rotation_euler[2]=math.radians(-8)
+# Cape clasp and subtle dark chest ornaments.
+uv("Cape silver clasp",(0,-.31,1.92),(.095,.045,.075),green,"spine")
+for side,x in [("L",-.22),("R",.22)]:
+    uv("Cape dark crest "+side,(x,-.015,1.72),(.16,.045,.10),leather,"spine")
 # animations: gentle idle breathing via spine/head and alternating walk legs/arms
 bpy.context.view_layer.objects.active=rig
 rig.animation_data_create()
