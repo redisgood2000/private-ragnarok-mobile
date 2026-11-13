@@ -49,9 +49,6 @@ bones={
  "shin.R":((.23,0,.53),(.24,-.01,.13),"thigh.R"),
  "foot.R":((.24,-.01,.13),(.24,-.27,.10),"shin.R"),
 }
-for name,(h,t,parent) in bones.items():
- b=arm_data.edit_bones.new(name); b.head=h; b.tail=t
- if parent: b.parent=arm_data.edit_bones[parent]
 # Individual digit chains make the hand and foot rig usable for posing.
 for side, sign, hand_name, foot_name in [
     ("L",-1,"hand.L","foot.L"),("R",1,"hand.R","foot.R")
